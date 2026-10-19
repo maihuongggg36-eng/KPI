@@ -1,0 +1,616 @@
+@model KPI.Web.ViewModels.Catalog.CatalogIndexViewModel
+@{
+    ViewData["Title"] = "Quản trị Danh mục Hệ thống";
+    ViewData["BreadcrumbItems"] = new List<(string Title, string Url)>
+    {
+        ("Quản trị Hệ thống", "/Catalog"),
+        ("Danh mục Dùng chung", "/Catalog")
+    };
+}
+
+<!-- Top Header Banner -->
+<div class="card-enterprise p-4 mb-4" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border-left: 4px solid var(--color-primary);">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary fw-bold">
+                    <i class="bi bi-database-fill-gear me-1"></i>Master Catalogs Hub (18 Danh mục)
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary">Học viện Hành chính và Quản trị công</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-primary-emphasis">Trung tâm Quản trị Danh mục Nghiệp vụ Dùng chung</h3>
+            <p class="text-secondary small mb-0">
+                Quản lý tập trung toàn diện: Tổ chức, Phòng ban, Chức danh, Ngạch bậc, Từ điển KPI, Kỳ đánh giá, Thang điểm và Tham số hệ thống.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="KpiBank" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-journal-bookmark me-1"></i> Ngân hàng KPI Card View
+            </a>
+            <a asp-action="DepartmentTree" class="btn btn-outline-info btn-sm rounded-pill px-3">
+                <i class="bi bi-diagram-3 me-1"></i> Sơ đồ Cây Phòng ban
+            </a>
+            <button class="btn btn-primary btn-sm rounded-pill px-3 btn-lift" onclick="handleNewItemCurrentTab()">
+                <i class="bi bi-plus-lg me-1"></i> Thêm Mới (Ctrl+N)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Layout: Sidebar Tabs (Trái) & Content Grid (Phải) -->
+<div class="row g-4">
+    <!-- Cột trái: 12 Tabs Danh mục (25%) -->
+    <div class="col-lg-3">
+        <div class="card-enterprise p-3 mb-3">
+            <div class="text-muted small fw-bold text-uppercase px-2 mb-2" style="font-size: 11px;">DANH MỤC NGHIỆP VỤ (18 DM)</div>
+            <div class="nav flex-column nav-pills gap-1" id="catalogNavTabs" role="tablist">
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "kpi-items" ? "active" : "")" 
+                        data-tab="kpi-items" onclick="switchCatalogTab('kpi-items')">
+                    <i class="bi bi-journal-bookmark-fill me-2"></i>Ngân hàng KPI (@Model.KpiItems.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "departments" ? "active" : "")" 
+                        data-tab="departments" onclick="switchCatalogTab('departments')">
+                    <i class="bi bi-diagram-3-fill me-2"></i>Phòng ban (@Model.Departments.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "positions" ? "active" : "")" 
+                        data-tab="positions" onclick="switchCatalogTab('positions')">
+                    <i class="bi bi-person-badge-fill me-2"></i>Chức danh (@Model.Positions.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "ranks" ? "active" : "")" 
+                        data-tab="ranks" onclick="switchCatalogTab('ranks')">
+                    <i class="bi bi-patch-check-fill me-2"></i>Ngạch công chức (@Model.PositionRanks.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "categories" ? "active" : "")" 
+                        data-tab="categories" onclick="switchCatalogTab('categories')">
+                    <i class="bi bi-tags-fill me-2"></i>Nhóm KPI BSC (@Model.Categories.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "units" ? "active" : "")" 
+                        data-tab="units" onclick="switchCatalogTab('units')">
+                    <i class="bi bi-rulers me-2"></i>Đơn vị đo (@Model.Units.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "methods" ? "active" : "")" 
+                        data-tab="methods" onclick="switchCatalogTab('methods')">
+                    <i class="bi bi-calculator-fill me-2"></i>Phương pháp đo (@Model.Methods.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "periods" ? "active" : "")" 
+                        data-tab="periods" onclick="switchCatalogTab('periods')">
+                    <i class="bi bi-calendar-range-fill me-2"></i>Kỳ đánh giá (@Model.Periods.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "scales" ? "active" : "")" 
+                        data-tab="scales" onclick="switchCatalogTab('scales')">
+                    <i class="bi bi-speedometer2 me-2"></i>Thang điểm (@Model.Scales.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "templates" ? "active" : "")" 
+                        data-tab="templates" onclick="switchCatalogTab('templates')">
+                    <i class="bi bi-collection-fill me-2"></i>Bộ mẫu KPI (@Model.Templates.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "configs" ? "active" : "")" 
+                        data-tab="configs" onclick="switchCatalogTab('configs')">
+                    <i class="bi bi-sliders me-2"></i>Tham số hệ thống (@Model.Configs.Count)
+                </button>
+                <button class="nav-link text-start rounded-pill py-2 px-3 @(Model.ActiveTab == "notifications" ? "active" : "")" 
+                        data-tab="notifications" onclick="switchCatalogTab('notifications')">
+                    <i class="bi bi-bell-fill me-2"></i>Mẫu thông báo (@Model.Notifications.Count)
+                </button>
+            </div>
+        </div>
+
+        <!-- Phím tắt hướng dẫn -->
+        <div class="card-enterprise p-3 small text-secondary">
+            <div class="fw-bold mb-2 text-primary-emphasis"><i class="bi bi-keyboard me-1"></i>Phím tắt thao tác:</div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Thêm bản ghi:</span>
+                <span class="kbd-shortcut font-mono">Ctrl + N</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Lưu biểu mẫu:</span>
+                <span class="kbd-shortcut font-mono">Enter</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Xóa mục chọn:</span>
+                <span class="kbd-shortcut font-mono">Delete</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: Khung Dữ liệu Bảng & Công cụ Tìm kiếm (75%) -->
+    <div class="col-lg-9">
+        <!-- Thanh công cụ Tìm kiếm & Bulk Action -->
+        <div class="card-enterprise p-3 mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="input-group" style="max-width: 400px;">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="bi bi-search text-secondary"></i>
+                    </span>
+                    <input type="text" class="form-control form-control-enterprise border-start-0" id="catalogSearchInput" 
+                           placeholder="Lọc nhanh trong bảng dữ liệu..." onkeyup="filterActiveCatalogTable()" />
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Bulk Actions -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="bulkActionBtn" disabled>
+                            <i class="bi bi-check2-square me-1"></i> Thao tác chọn (<span id="selectedCount">0</span>)
+                        </button>
+                        <ul class="dropdown-menu shadow-sm border-0">
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="executeBulkAction('delete')"><i class="bi bi-trash me-2"></i>Xóa các mục đã chọn</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="executeBulkAction('activate')"><i class="bi bi-check-circle me-2"></i>Kích hoạt hoạt động</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="executeBulkAction('deactivate')"><i class="bi bi-pause-circle me-2"></i>Tạm dừng hoạt động</a></li>
+                        </ul>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportCurrentCatalogCsv()">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Xuất CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. TAB: NGÂN HÀNG KPI CHUẨN -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "kpi-items" ? "" : "d-none")" id="tab-kpi-items">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-journal-bookmark-fill me-2 text-primary"></i>Danh mục Ngân hàng Chỉ số KPI Chuẩn (DM-07)</h6>
+                    <span class="badge bg-primary-subtle text-primary">@Model.KpiItems.Count chỉ số</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise" id="table-kpi-items">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" class="form-check-input select-all-chk" onchange="toggleSelectAll(this)" /></th>
+                                <th>Mã KPI</th>
+                                <th>Tên Chỉ Tiêu</th>
+                                <th>Viễn cảnh BSC</th>
+                                <th>Đơn vị tính</th>
+                                <th>Công thức</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var k in Model.KpiItems)
+                            {
+                                <tr>
+                                    <td><input type="checkbox" class="form-check-input row-chk" value="@k.Id" onchange="updateSelectedCount()" /></td>
+                                    <td><span class="badge bg-dark font-mono">@k.Code</span></td>
+                                    <td>
+                                        <div class="fw-bold">@k.Name</div>
+                                        <small class="text-secondary">@k.Description</small>
+                                    </td>
+                                    <td><span class="badge bg-primary-subtle text-primary">@k.CategoryName</span></td>
+                                    <td>@k.UnitName (@k.UnitSymbol)</td>
+                                    <td>
+                                        <span class="badge @(k.ScoringFormula == "HigherIsBetter" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
+                                            @(k.ScoringFormula == "HigherIsBetter" ? "Càng cao càng tốt" : "Càng thấp càng tốt")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(k.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                            @(k.IsActive ? "Hoạt động" : "Tạm dừng")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-info rounded-circle me-1" title="Nhân bản" onclick="openCloneModal(@k.Id, '@k.Code', '@k.Name')"><i class="bi bi-copy"></i></button>
+                                        <button class="btn btn-sm btn-outline-primary rounded-circle me-1" title="Sửa" onclick="editKpiItem(@k.Id, '@k.Code', '@k.Name', @k.CategoryId, @k.UnitId, @k.MethodId, '@k.ScoringFormula', @(k.IsCivilServantOnly ? "true" : "false"), '@k.Description')"><i class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa" onclick="confirmDeleteKpi(@k.Id, '@k.Name')"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. TAB: PHÒNG BAN -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "departments" ? "" : "d-none")" id="tab-departments">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-diagram-3-fill me-2 text-primary"></i>Danh mục Phòng ban & Cây Đơn vị (DM-02)</h6>
+                    <a asp-action="DepartmentTree" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-diagram-3 me-1"></i>Xem Dạng Cây</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise" id="table-departments">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" class="form-check-input select-all-chk" onchange="toggleSelectAll(this)" /></th>
+                                <th>Mã PB</th>
+                                <th>Tên Phòng Ban</th>
+                                <th>Cấp độ</th>
+                                <th>Đường dẫn cây</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.Departments)
+                            {
+                                <tr>
+                                    <td><input type="checkbox" class="form-check-input row-chk" value="@d.Id" onchange="updateSelectedCount()" /></td>
+                                    <td><span class="badge bg-dark font-mono">@d.Code</span></td>
+                                    <td class="fw-bold">@d.Name</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">Cấp @d.Level</span></td>
+                                    <td><span class="font-mono text-muted small">@d.TreePath</span></td>
+                                    <td><span class="badge bg-success-subtle text-success">@d.Status</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary rounded-circle me-1" title="Sửa" onclick="editDeptNode(@d.Id, '@d.Code', '@d.Name')"><i class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa" onclick="confirmDeleteDept(@d.Id, '@d.Name')"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. TAB: CHỨC DANH -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "positions" ? "" : "d-none")" id="tab-positions">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Danh mục Vị trí Việc làm & Chức danh (DM-03)</h6>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="openNewPositionModal()"><i class="bi bi-plus-lg me-1"></i>Thêm Chức danh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>Mã Chức Danh</th>
+                                <th>Tên Vị Trí Việc Làm</th>
+                                <th>Nhóm Cấp Bậc</th>
+                                <th>Lãnh Đạo Quản Lý</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Positions)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-dark font-mono">@p.Code</span></td>
+                                    <td class="fw-bold">@p.Name</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">@p.RankLevel</span></td>
+                                    <td>
+                                        <span class="badge @(p.IsLeadership ? "bg-primary-subtle text-primary" : "bg-light text-secondary")">
+                                            @(p.IsLeadership ? "Lãnh đạo" : "Chuyên môn")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deletePosition(@p.Id, '@p.Name')"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. TAB: NGẠCH CÔNG CHỨC -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "ranks" ? "" : "d-none")" id="tab-ranks">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-patch-check-fill me-2 text-primary"></i>Danh mục Ngạch Công chức theo Bộ Nội vụ (DM-04)</h6>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="openNewRankModal()"><i class="bi bi-plus-lg me-1"></i>Thêm Ngạch</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>Mã Ngạch</th>
+                                <th>Tên Ngạch Công Chức</th>
+                                <th>Nhóm Ngạch</th>
+                                <th>Bậc Tối Đa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.PositionRanks)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-dark font-mono">@r.RankCode</span></td>
+                                    <td class="fw-bold">@r.RankName</td>
+                                    <td><span class="badge bg-info-subtle text-info">@r.RankGroup</span></td>
+                                    <td>@r.MaxGrade bậc</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. TAB: KỲ ĐÁNH GIÁ (LIFECYCLE) -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "periods" ? "" : "d-none")" id="tab-periods">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-calendar-range-fill me-2 text-primary"></i>Danh mục Kỳ Đánh giá & Vòng đời Lifecycle (DM-11)</h6>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="openNewPeriodModal()"><i class="bi bi-plus-lg me-1"></i>Tạo Kỳ Mới</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>Mã Kỳ</th>
+                                <th>Tên Kỳ Đánh Giá</th>
+                                <th>Năm</th>
+                                <th>Hạn Tự Chấm</th>
+                                <th>Hạn Thẩm Định</th>
+                                <th>Trạng Thái Lifecycle</th>
+                                <th class="text-end">Chuyển Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pr in Model.Periods)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-dark font-mono">@pr.Code</span></td>
+                                    <td class="fw-bold">@pr.Name</td>
+                                    <td>@pr.Year</td>
+                                    <td><span class="font-mono text-muted small">@pr.SelfDeadline.ToString("dd/MM/yyyy")</span></td>
+                                    <td><span class="font-mono text-muted small">@pr.ManagerDeadline.ToString("dd/MM/yyyy")</span></td>
+                                    <td>
+                                        <span class="badge @(pr.Status == "Open" ? "bg-success-subtle text-success" : pr.Status == "Evaluating" ? "bg-warning-subtle text-warning" : "bg-secondary-subtle text-secondary")">
+                                            @pr.Status
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <select class="form-select form-select-sm d-inline-block font-mono" style="width: 130px;" onchange="changePeriodLifecycle(@pr.Id, this.value)">
+                                            <option value="Draft" selected="@(pr.Status == "Draft")">Draft (Soạn)</option>
+                                            <option value="Open" selected="@(pr.Status == "Open")">Open (Mở)</option>
+                                            <option value="Evaluating" selected="@(pr.Status == "Evaluating")">Evaluating (Chấm)</option>
+                                            <option value="Finalizing" selected="@(pr.Status == "Finalizing")">Finalizing (Duyệt)</option>
+                                            <option value="Closed" selected="@(pr.Status == "Closed")">Closed (Đóng)</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. TAB: THAM SỐ HỆ THỐNG -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "configs" ? "" : "d-none")" id="tab-configs">
+            <div class="card-enterprise">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary-emphasis"><i class="bi bi-sliders me-2 text-primary"></i>Tham số Cấu hình Động Toàn Hệ thống (DM-16)</h6>
+                    <span class="badge bg-secondary-subtle text-secondary">BR-01, BR-02, BR-06</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>Khóa Tham Số (Config Key)</th>
+                                <th>Giá Trị Cấu Hình</th>
+                                <th>Ý Nghĩa Nghiệp Vụ</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cfg in Model.Configs)
+                            {
+                                <tr>
+                                    <td><code class="fw-bold">@cfg.ConfigKey</code></td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm form-control-enterprise font-mono" id="config-val-@cfg.ConfigKey" value="@cfg.ConfigValue" />
+                                    </td>
+                                    <td class="small text-secondary">@cfg.Description</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="saveSystemConfig('@cfg.ConfigKey')">
+                                            <i class="bi bi-check2 me-1"></i>Lưu
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. CÁC TABS CÒN LẠI: Categories, Units, Methods, Scales, Templates, Notifications -->
+        <div class="catalog-tab-content @(Model.ActiveTab == "categories" ? "" : "d-none")" id="tab-categories">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-tags-fill me-2 text-primary"></i>Nhóm Chỉ tiêu theo 4 Viễn cảnh BSC (DM-06)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Mã</th><th>Tên Nhóm Chỉ Tiêu</th><th>Viễn Cảnh</th><th>Áp Dụng</th></tr></thead>
+                        <tbody>
+                            @foreach (var c in Model.Categories)
+                            {
+                                <tr>
+                                    <td><code>@c.Code</code></td>
+                                    <td class="fw-bold">@c.Name</td>
+                                    <td><span class="badge bg-primary-subtle text-primary">@c.Perspective</span></td>
+                                    <td>@c.TargetSector</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="catalog-tab-content @(Model.ActiveTab == "units" ? "" : "d-none")" id="tab-units">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-rulers me-2 text-primary"></i>Đơn vị Đo lường Chuẩn (DM-08)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Mã</th><th>Tên Đơn Vị</th><th>Ký Hiệu</th></tr></thead>
+                        <tbody>
+                            @foreach (var u in Model.Units)
+                            {
+                                <tr><td><code>@u.Code</code></td><td class="fw-bold">@u.Name</td><td><span class="badge bg-secondary">@u.Symbol</span></td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="catalog-tab-content @(Model.ActiveTab == "methods" ? "" : "d-none")" id="tab-methods">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-calculator-fill me-2 text-primary"></i>Phương pháp Đo lường & Nguồn Kiểm chứng (DM-09)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Mã</th><th>Tên Phương Pháp</th><th>Nguồn Dữ Liệu</th></tr></thead>
+                        <tbody>
+                            @foreach (var m in Model.Methods)
+                            {
+                                <tr><td><code>@m.Code</code></td><td class="fw-bold">@m.Name</td><td>@m.DataSource</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="catalog-tab-content @(Model.ActiveTab == "scales" ? "" : "d-none")" id="tab-scales">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-speedometer2 me-2 text-primary"></i>Thang điểm & Tiêu chuẩn Phân loại Nghị định 90 (DM-12, DM-13)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Thang Điểm</th><th>Biên Độ</th><th>Mức Xếp Loại</th><th>Khống Chế 20%</th></tr></thead>
+                        <tbody>
+                            @foreach (var s in Model.Scales)
+                            {
+                                @foreach (var l in s.Levels)
+                                {
+                                    <tr>
+                                        <td>@s.Name (<code>@s.Code</code>)</td>
+                                        <td>@l.MinPercentage% - @l.MaxPercentage%</td>
+                                        <td class="fw-bold">@l.Name</td>
+                                        <td>@(l.IsCappedAt20Percent ? "Có (≤20% theo BR-06)" : "Không")</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="catalog-tab-content @(Model.ActiveTab == "templates" ? "" : "d-none")" id="tab-templates">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-collection-fill me-2 text-primary"></i>Bộ Mẫu KPI theo Vị trí Việc làm (DM-15)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Mã Bộ Mẫu</th><th>Tên Bộ Mẫu</th><th>Chức Danh Áp Dụng</th><th>Số Chỉ Tiêu</th><th>Tổng Trọng Số</th></tr></thead>
+                        <tbody>
+                            @if (!Model.Templates.Any())
+                            {
+                                <tr><td colspan="5" class="text-center text-muted py-4">Chưa có bộ mẫu tùy biến. Sử dụng ngân hàng chỉ số để thiết lập.</td></tr>
+                            }
+                            @foreach (var t in Model.Templates)
+                            {
+                                <tr><td><code>@t.Code</code></td><td class="fw-bold">@t.Name</td><td>@t.PositionName</td><td>@t.Items.Count</td><td>@t.TotalWeight%</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="catalog-tab-content @(Model.ActiveTab == "notifications" ? "" : "d-none")" id="tab-notifications">
+            <div class="card-enterprise p-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bell-fill me-2 text-primary"></i>Mẫu Thông báo In-App & Email Sự kiện (DM-18)</h6>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead><tr><th>Mã Sự Kiện</th><th>Tiêu Đề Mẫu</th><th>Kênh Gửi</th><th>Trạng Thái</th></tr></thead>
+                        <tbody>
+                            @foreach (var n in Model.Notifications)
+                            {
+                                <tr><td><code>@n.EventCode</code></td><td class="fw-bold">@n.SubjectTemplate</td><td><span class="badge bg-secondary">@n.Channels</span></td><td><span class="badge bg-success-subtle text-success">Hoạt động</span></td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. LỊCH SỬ THAY ĐỔI (ACTIVITY AUDIT LOG) DƯỚI CHÂN TRANG -->
+        <div class="card-enterprise mt-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-secondary fs-5"></i>
+                    <h6 class="fw-bold mb-0">Nhật ký Thao tác Danh mục (Catalog Audit Trail)</h6>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary">20 sự kiện gần nhất</span>
+            </div>
+            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table class="table-enterprise small mb-0">
+                    <thead>
+                        <tr>
+                            <th>Hành Động</th>
+                            <th>Thực Thể</th>
+                            <th>Người Thực Hiện</th>
+                            <th>Thời Gian</th>
+                            <th>Chi Tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.ActivityLogs)
+                        {
+                            <tr>
+                                <td><span class="badge bg-dark font-mono">@log.Action</span></td>
+                                <td>@log.EntityName #@log.EntityId</td>
+                                <td>@log.UserName</td>
+                                <td class="text-muted font-mono" style="font-size: 11px;">@log.Timestamp</td>
+                                <td class="text-truncate" style="max-width: 280px;" title="@log.Summary">@log.Summary</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_CatalogModals" />
+
+<!-- Modal Thêm Chức Danh -->
+<div class="modal fade" id="positionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold">Thêm Mới Vị Trí Việc Làm / Chức Danh</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="submitPositionForm(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mã Chức Danh <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise font-mono" id="posCode" required placeholder="VD: P_TRUONG" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tên Chức Danh <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise" id="posName" required placeholder="VD: Phó Trưởng phòng" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nhóm Cấp Bậc</label>
+                        <select class="form-select form-control-enterprise" id="posRankLevel">
+                            <option value="Lãnh đạo cấp cao">Lãnh đạo cấp cao</option>
+                            <option value="Lãnh đạo cấp phòng" selected>Lãnh đạo cấp phòng</option>
+                            <option value="Chuyên viên chính">Chuyên viên chính</option>
+                            <option value="Chuyên viên">Chuyên viên</option>
+                            <option value="Thừa hành">Thừa hành</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="posIsLeadership" />
+                        <label class="form-check-label small fw-semibold" for="posIsLeadership">Là vị trí lãnh đạo quản lý</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 btn-lift">Lưu Chức Danh</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/catalog-manager.js" asp-append-version="true"></script>
+}

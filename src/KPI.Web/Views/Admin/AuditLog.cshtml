@@ -1,0 +1,111 @@
+@model List<KPI.Domain.Entities.Identity.AuditLog>
+@{
+    ViewData["Title"] = "Nhật ký Kiểm toán (ADMIN)";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalLogs = ViewBag.TotalLogs ?? 0;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item text-muted">Quản trị Hệ thống (ADMIN)</li>
+                    <li class="breadcrumb-item active fw-bold text-primary">Nhật ký Kiểm toán</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Nhật Ký Kiểm Toán Hệ Thống (Audit Trail)</h2>
+            <p class="text-muted small mb-0">Theo dõi toàn bộ hoạt động quan trọng: Đăng nhập, Reset mật khẩu, Phân quyền, Thao tác dữ liệu...</p>
+        </div>
+        <span class="badge bg-primary px-3 py-2 fs-6">Tổng số: @totalLogs bản ghi</span>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-3" style="width: 70px;">ID</th>
+                            <th>Thời gian (UTC)</th>
+                            <th>Tài khoản</th>
+                            <th>Hành động (Action)</th>
+                            <th>Đối tượng (Entity)</th>
+                            <th>Chi tiết dữ liệu</th>
+                            <th class="text-end pe-3">Địa chỉ IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">Chưa có nhật ký kiểm toán nào.</td>
+                            </tr>
+                        }
+                        @foreach (var log in Model)
+                        {
+                            var actionBadge = log.Action switch
+                            {
+                                "LOGIN_SUCCESS" => "bg-success",
+                                "LOGIN_FAILED" => "bg-danger",
+                                "RESET_PASSWORD" => "bg-warning text-dark",
+                                "UPDATE_USER_INFO" => "bg-primary",
+                                "UPDATE_ROLE_PERMISSIONS" => "bg-info text-dark",
+                                "DELETE_MENU_ITEM" => "bg-danger",
+                                _ => "bg-secondary"
+                            };
+
+                            <tr>
+                                <td class="ps-3 fw-bold text-muted">#@log.Id</td>
+                                <td class="small text-muted">
+                                    <i class="bi bi-clock me-1"></i>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@(log.User?.Username ?? "System / Anonymous")</div>
+                                </td>
+                                <td>
+                                    <span class="badge @actionBadge">@log.Action</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@log.EntityName #@log.EntityId</span>
+                                </td>
+                                <td class="small text-truncate" style="max-width: 300px;" title="@log.NewValues">
+                                    <code>@(log.NewValues ?? "-")</code>
+                                </td>
+                                <td class="text-end pe-3 font-monospace small text-muted">
+                                    @log.IpAddress
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center">
+                <span class="small text-muted">Trang @currentPage / @totalPages</span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item"><a class="page-link" asp-action="AuditLog" asp-route-page="@(currentPage - 1)">Trước</a></li>
+                        }
+                        @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+                        {
+                            <li class="page-item @(p == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="AuditLog" asp-route-page="@p">@p</a>
+                            </li>
+                        }
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item"><a class="page-link" asp-action="AuditLog" asp-route-page="@(currentPage + 1)">Sau</a></li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

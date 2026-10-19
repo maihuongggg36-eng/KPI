@@ -1,0 +1,279 @@
+@model KPI.Web.ViewModels.Evaluation.ManagerReviewViewModel
+@{
+    ViewData["Title"] = "Thẩm Định Điểm KPI Cán Bộ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var eval = Model.Evaluation;
+    var isReadOnly = Model.IsReadOnly;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Evaluation/ManagerList">Thẩm Định KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Phiếu Thẩm Định</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-person-check-fill me-2 text-primary"></i>Phiếu Thẩm Định Đánh Giá Cán Bộ (Manager Review)
+            </h1>
+            <p class="text-secondary small mb-0">Đối chiếu kết quả thực hiện, thẩm định điểm số và giải trình điều chỉnh theo quy tắc BR-04 & BR-05</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge @eval.StatusBadgeClass rounded-pill px-3 py-2 fs-6">
+                <i class="bi bi-circle-fill me-1 small"></i>@eval.StatusName
+            </span>
+        </div>
+    </div>
+
+    <!-- PROFILE & SUMMARY CARD -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card-enterprise p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="@eval.AvatarUrl" alt="" class="rounded-circle border border-2 border-primary" style="width: 56px; height: 56px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">@eval.EmployeeName <span class="badge bg-light text-secondary font-mono">@eval.EmployeeCode</span></h5>
+                        <div class="text-secondary small d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-briefcase me-1 text-primary"></i>@eval.PositionName</span>
+                            <span><i class="bi bi-building me-1 text-primary"></i>@eval.DepartmentName</span>
+                            <span><i class="bi bi-calendar3 me-1 text-primary"></i>@eval.PeriodName</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (isReadOnly)
+                {
+                    <div class="alert alert-info py-2 px-3 mb-0 mt-3 small d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill fs-5"></i>
+                        <div>Hồ sơ đang ở chế độ <strong>Chỉ đọc</strong>. Bạn không thể thay đổi điểm thẩm định khi hồ sơ chưa được nhân viên nộp hoặc đã được chuyển duyệt.</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- SCORE COMPARISON COUNTER -->
+        <div class="col-lg-4">
+            <div class="card-enterprise p-3 h-100 bg-gradient-navy text-white text-center d-flex flex-column justify-content-center">
+                <div class="row g-2 align-items-center">
+                    <div class="col-6 border-end border-white-subtle">
+                        <div class="text-white-50 small text-uppercase">Cán Bộ Tự Chấm</div>
+                        <div class="fs-2 fw-bold font-mono text-warning" id="selfTotalScoreDisplay">@eval.SelfTotalScore.ToString("F1")</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-white-50 small text-uppercase">Quản Lý Thẩm Định</div>
+                        <div class="fs-2 fw-bold font-mono text-success" id="grandManagerScoreDisplay">@(eval.ManagerTotalScore > 0 ? eval.ManagerTotalScore.ToString("F1") : eval.SelfTotalScore.ToString("F1"))</div>
+                    </div>
+                </div>
+                <div class="small text-white-50 mt-2">
+                    <span id="br05GapWarningCount" class="badge bg-danger rounded-pill px-2">0</span> chỉ tiêu lệch &gt; 10% cần giải trình &ge; 50 ký tự (BR-05)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN COMPARISON TABLE (2 COLUMNS: STAFF VS MANAGER) -->
+    <div class="card-enterprise p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-columns-gap me-2 text-primary"></i>Đối Chiếu Điểm Số & Thẩm Định Chi Tiết
+            </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                @eval.Details.Count Chỉ tiêu
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="managerReviewTable">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th style="min-width: 200px;">Chỉ tiêu KPI & Kế hoạch</th>
+                        <th style="width: 140px;" class="text-center bg-primary-subtle text-primary">Cán bộ tự chấm</th>
+                        <th style="min-width: 280px;" class="bg-success-subtle text-success">Quản lý thẩm định (BR-05)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < eval.Details.Count; i++)
+                    {
+                        var d = eval.Details[i];
+                        var mgrScore = d.ManagerScore > 0 ? d.ManagerScore : d.SelfScore;
+                        var gap = Math.Abs(d.SelfScore - mgrScore);
+                        var isGapOver10 = gap > 10.0m;
+
+                        <tr class="mgr-eval-row" 
+                            data-detail-id="@d.Id"
+                            data-assignment-detail-id="@d.AssignmentDetailId"
+                            data-weight="@d.Weight"
+                            data-self-score="@d.SelfScore">
+                            <td class="text-center text-muted font-mono">@(i + 1)</td>
+                            <td>
+                                <div class="fw-semibold text-dark">@d.KpiName</div>
+                                <div class="small text-muted d-flex flex-wrap gap-2 mb-1">
+                                    <span>Mục tiêu: <strong class="font-mono text-dark">@d.TargetValue.ToString("N1") @d.Unit</strong></span>
+                                    <span>&bull;</span>
+                                    <span>Trọng số: <strong class="font-mono text-primary">@d.Weight.ToString("N1")%</strong></span>
+                                    <span>&bull;</span>
+                                    <span>Thực tế: <span class="badge bg-light text-dark font-mono">@d.ActualValue.ToString("N1")</span></span>
+                                </div>
+
+                                <!-- EVIDENCES LIST -->
+                                @if (d.Evidences.Count > 0)
+                                {
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        @foreach (var ev in d.Evidences)
+                                        {
+                                            <a href="@ev.FilePath" target="_blank" class="badge bg-light text-primary border text-decoration-none small" title="@ev.FileName">
+                                                <i class="bi bi-paperclip me-1 text-success"></i>@ev.FileName (@ev.FileSizeFormatted)
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                                else if (d.CompletionRate >= 120)
+                                {
+                                    <div class="badge bg-danger-subtle text-danger small mt-1">
+                                        <i class="bi bi-exclamation-octagon me-1"></i>Vượt trần thiếu minh chứng!
+                                    </div>
+                                }
+                            </td>
+
+                            <!-- STAFF SCORE COLUMN -->
+                            <td class="text-center bg-primary-subtle bg-opacity-25">
+                                <div class="fw-bold font-mono fs-5 text-primary self-score-text">@d.SelfScore.ToString("F1")</div>
+                                <div class="text-muted small" style="font-size: 11px;">
+                                    Tỷ lệ: <span class="font-mono">@d.CompletionRate.ToString("F1")%</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(d.SelfRemarks))
+                                {
+                                    <div class="small text-secondary fst-italic mt-1 text-start p-1 bg-white rounded border" style="font-size: 11px;">
+                                        &ldquo;@d.SelfRemarks&rdquo;
+                                    </div>
+                                }
+                            </td>
+
+                            <!-- MANAGER SCORE COLUMN (BR-05) -->
+                            <td class="bg-success-subtle bg-opacity-10">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <label class="form-label mb-0 small text-secondary">Điểm thẩm định:</label>
+                                    <input type="number" 
+                                           step="0.1" 
+                                           class="form-control form-control-sm text-center font-mono fw-bold manager-score-input @(isGapOver10 ? "border-danger bg-danger-subtle" : "")" 
+                                           style="width: 100px;" 
+                                           value="@mgrScore.ToString("F1")" 
+                                           min="0" 
+                                           max="@d.MaxCap" 
+                                           @(isReadOnly ? "disabled" : "") />
+                                    
+                                    <div class="score-gap-indicator ms-2">
+                                        <span class="badge @(isGapOver10 ? "bg-danger" : "bg-light text-muted") font-mono gap-badge">
+                                            Lệch: <span class="gap-val">@gap.ToString("F1")</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- BR-05: JUSTIFICATION TEXTAREA WITH CHARACTER COUNTER -->
+                                <div class="gap-reason-wrapper @(isGapOver10 ? "" : "d-none")">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label text-danger small fw-bold mb-0">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Lý do giải trình chênh lệch &gt; 10% (BR-05):
+                                        </label>
+                                        <span class="font-mono small char-counter @((d.ScoreGapReason?.Trim().Length ?? 0) >= 50 ? "text-success" : "text-danger")">
+                                            <span class="char-count">@((d.ScoreGapReason?.Trim().Length ?? 0))</span> / 50 ký tự
+                                        </span>
+                                    </div>
+                                    <textarea class="form-control form-control-sm gap-reason-textarea @((d.ScoreGapReason?.Trim().Length ?? 0) < 50 ? "border-danger" : "")" 
+                                              rows="2" 
+                                              placeholder="Nhập lý do điều chỉnh điểm chi tiết (bắt buộc tối thiểu 50 ký tự theo quy định BR-05)..." 
+                                              @(isReadOnly ? "disabled" : "")>@d.ScoreGapReason</textarea>
+                                </div>
+
+                                <div class="mt-2">
+                                    <input type="text" 
+                                           class="form-control form-control-sm text-secondary manager-remark-input" 
+                                           placeholder="Nhận xét / Đóng góp cho chỉ tiêu..." 
+                                           value="@d.ManagerRemarks" 
+                                           @(isReadOnly ? "disabled" : "") />
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MANAGER OVERALL REMARKS -->
+    <div class="card-enterprise p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-2">
+            <i class="bi bi-chat-square-quote me-2 text-primary"></i>Kết Luận & Nhận Xét Của Quản Lý Trực Tiếp
+        </h5>
+        <textarea id="managerOverallRemarks" 
+                  class="form-control" 
+                  rows="3" 
+                  placeholder="Nhập ý kiến đánh giá chung của Quản lý phòng ban..." 
+                  @(isReadOnly ? "disabled" : "")>@eval.ManagerRemarksOverall</textarea>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    @if (!isReadOnly)
+    {
+        <div class="card-enterprise p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <a href="/Evaluation/ManagerList" class="btn btn-light rounded-pill px-4">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
+            </a>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-danger rounded-pill px-4" onclick="openReturnModal()">
+                    <i class="bi bi-arrow-return-left me-2"></i>Trả Lại Cán Bộ (Yêu cầu bổ sung)
+                </button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btnSaveManagerDraft" onclick="submitManagerReview(true)">
+                    <i class="bi bi-save me-2"></i>Lưu Nháp Thẩm Định
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnSubmitManagerFinal" onclick="submitManagerReview(false)">
+                    <i class="bi bi-check2-all me-2"></i>Hoàn Tất Thẩm Định & Trình Duyệt
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- MODAL: RETURN TO STAFF -->
+<div class="modal fade" id="returnToStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-arrow-return-left me-2"></i>Trả Lại Hồ Sơ Đánh Giá Cho Cán Bộ
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small">Hồ sơ sẽ được chuyển ngược về trạng thái <strong>Đang tự đánh giá</strong> để cán bộ cập nhật lại số liệu hoặc bổ sung tài liệu minh chứng.</p>
+                <div class="mb-3">
+                    <label for="returnReasonTextarea" class="form-label text-dark small fw-bold">Lý do trả lại:</label>
+                    <textarea id="returnReasonTextarea" class="form-control" rows="3" placeholder="Nhập lý do chỉ đạo cán bộ bổ sung..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="performReturnToStaff()">
+                    <i class="bi bi-arrow-return-left me-1"></i>Xác Nhận Trả Lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.evaluationData = {
+        evaluationId: @eval.Id,
+        isReadOnly: @(isReadOnly ? "true" : "false")
+    };
+</script>
+<script src="~/js/manager-review.js"></script>

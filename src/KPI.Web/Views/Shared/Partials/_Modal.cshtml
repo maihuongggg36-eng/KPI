@@ -1,0 +1,29 @@
+@* 
+    _Modal.cshtml
+    Tham số ViewData:
+    - ModalId: string
+    - ModalTitle: string
+    - ModalSize: modal-sm | modal-lg | modal-xl (mặc định để trống)
+*@
+@{
+    var id = ViewData["ModalId"]?.ToString() ?? "appModal";
+    var title = ViewData["ModalTitle"]?.ToString() ?? "Thông báo Hệ thống";
+    var size = ViewData["ModalSize"]?.ToString() ?? "";
+}
+
+<div class="modal fade" id="@id" tabindex="-1" aria-labelledby="@(id)Label" aria-hidden="true">
+    <div class="modal-dialog @size modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0 shadow-2xl rounded-4">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold" id="@(id)Label">@title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="@(id)Body">
+                <!-- Nội dung động nạp qua AJAX hoặc RenderBody -->
+            </div>
+            <div class="modal-footer border-top py-2" id="@(id)Footer">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>

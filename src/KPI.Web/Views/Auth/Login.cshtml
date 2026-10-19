@@ -1,0 +1,488 @@
+@model KPI.Web.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập Hệ thống";
+    Layout = null; // Standalone full-screen login experience
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Học viện Hành chính và Quản trị công</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --primary-glow: rgba(2, 132, 199, 0.3);
+            --bg-page: #f4f8fc;
+            --card-bg: #ffffff;
+            --border-card: #e0f2fe;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at 12% 18%, rgba(2, 132, 199, 0.15) 0%, transparent 45%),
+                        radial-gradient(circle at 88% 82%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+                        linear-gradient(135deg, #f0f7ff 0%, #ffffff 50%, #e0f2fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient floating light orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+            animation: orbFloat 18s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 340px; height: 340px; background: rgba(56, 189, 248, 0.25); top: 10%; left: 15%; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(2, 132, 199, 0.18); bottom: 10%; right: 15%; animation-duration: 22s; }
+
+        @@keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 40px) scale(1.1); }
+            100% { transform: translate(-20px, -30px) scale(0.95); }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px 20px;
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @@keyframes fadeInScale {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Clean White Card with Soft Blue Accent */
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e0f2fe;
+            border-radius: 24px;
+            padding: 38px 34px;
+            box-shadow: 0 20px 45px -12px rgba(2, 132, 199, 0.15),
+                        0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .brand-logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.35);
+            margin-bottom: 16px;
+        }
+
+        .brand-logo-container i {
+            font-size: 28px;
+            color: #fff;
+        }
+
+        .form-control-glass {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #0f172a !important;
+            border-radius: 12px;
+            padding: 12px 16px 12px 44px;
+            font-size: 14.5px;
+            font-weight: 500;
+            transition: all 0.25s ease;
+        }
+
+        .form-control-glass:focus {
+            background: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+            outline: none;
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+            pointer-events: none;
+            transition: color 0.25s ease;
+        }
+
+        .form-control-glass:focus + .input-icon,
+        .input-icon-wrapper:focus-within .input-icon {
+            color: #0284c7;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            font-size: 16px;
+        }
+        .password-toggle:hover { color: #0284c7; }
+
+        /* Primary Button */
+        .btn-premium {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-weight: 600;
+            font-size: 15px;
+            width: 100%;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 20px -4px rgba(2, 132, 199, 0.4);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-premium:hover {
+            background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+            box-shadow: 0 12px 25px -4px rgba(2, 132, 199, 0.5);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .btn-premium:active {
+            transform: translateY(1px);
+        }
+
+        /* 6 Quick Switch Role Pills */
+        .switch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-switch-role {
+            background: #f0f7ff;
+            border: 1px solid #bae6fd;
+            color: #334155;
+            padding: 9px 6px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .btn-switch-role i {
+            font-size: 16px;
+        }
+
+        .btn-switch-role:hover {
+            background: #e0f2fe;
+            border-color: #0284c7;
+            color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+        }
+
+        .role-director:hover { border-color: #ef4444; color: #dc2626; background: #fef2f2; }
+        .role-manager:hover { border-color: #0284c7; color: #0284c7; background: #e0f2fe; }
+        .role-officer:hover { border-color: #10b981; color: #059669; background: #ecfdf5; }
+        .role-hr:hover { border-color: #8b5cf6; color: #7c3aed; background: #f5f3ff; }
+        .role-accountant:hover { border-color: #f59e0b; color: #d97706; background: #fffbeb; }
+        .role-admin:hover { border-color: #0284c7; color: #0369a1; background: #e0f2fe; }
+
+        /* Custom Switch for Remember Me */
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Shake animation for validation errors */
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-error { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="login-wrapper">
+        <div class="glass-card">
+            <!-- Header Brand -->
+            <div class="text-center mb-4">
+                <div class="brand-logo-container">
+                    <i class="bi bi-award-fill"></i>
+                </div>
+                <h3 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.5px;">Học viện Hành chính</h3>
+                <div class="text-uppercase small fw-bold text-primary" style="letter-spacing: 1.2px; font-size: 11.5px;">
+                    Hệ thống Đánh giá KPI & Nghị định 90
+                </div>
+            </div>
+
+            <!-- Thông báo Lỗi / Thành công -->
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty]?.Errors.Count > 0)
+            {
+                <div class="alert alert-danger py-2 px-3 small rounded-3 border-0 bg-danger-subtle text-danger mb-3 shake-error" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    @Html.ValidationSummary(true, "", new { @class = "mb-0 list-unstyled" })
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger py-2 px-3 small rounded-3 border-0 bg-danger-subtle text-danger mb-3">
+                    <i class="bi bi-x-circle-fill me-1"></i> @TempData["ErrorMessage"]
+                </div>
+            }
+
+            @if (TempData["InfoMessage"] != null)
+            {
+                <div class="alert alert-info py-2 px-3 small rounded-3 border-0 bg-primary-subtle text-primary mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i> @TempData["InfoMessage"]
+                </div>
+            }
+
+            <!-- Form đăng nhập chuẩn -->
+            <form asp-action="Login" method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark mb-1" asp-for="Username"></label>
+                    <div class="input-icon-wrapper">
+                        <input asp-for="Username" class="form-control form-control-glass" id="usernameInput" placeholder="Tài khoản hoặc email..." autocomplete="username" />
+                        <i class="bi bi-person input-icon"></i>
+                    </div>
+                    <span asp-validation-for="Username" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold text-dark mb-0" asp-for="Password"></label>
+                        <a href="javascript:void(0)" onclick="alert('Vui lòng liên hệ Quản trị viên (admin@napa.edu.vn) để khôi phục mật khẩu công vụ.')" class="small text-decoration-none fw-semibold text-primary" style="font-size: 12px;">Quên mật khẩu?</a>
+                    </div>
+                    <div class="input-icon-wrapper">
+                        <input asp-for="Password" type="password" class="form-control form-control-glass" id="passwordInput" placeholder="Mật khẩu..." autocomplete="current-password" />
+                        <i class="bi bi-lock input-icon"></i>
+                        <button type="button" class="password-toggle" id="togglePasswordBtn" tabindex="-1">
+                            <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" role="switch" asp-for="RememberMe" id="rememberMeSwitch">
+                    <label class="form-check-label small text-secondary fw-semibold" for="rememberMeSwitch">Ghi nhớ phiên đăng nhập (7 ngày)</label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-premium mb-4" id="submitBtn">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập Hệ thống
+                </button>
+            </form>
+
+            <div class="position-relative text-center mb-3">
+                <hr style="border-color: #e2e8f0; margin: 0;">
+                <span class="position-absolute top-50 start-50 translate-middle px-3 small fw-bold" style="background: #ffffff; color: var(--text-muted); font-size: 11px;">
+                    CHUYỂN ĐỔI NHANH 1-CLICK (TEST)
+                </span>
+            </div>
+
+            <!-- 6 Nút Quick Switch Vai trò -->
+            <div class="switch-grid">
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="director" />
+                    <button type="submit" class="btn-switch-role role-director" title="Trần Lãnh Đạo - Giám đốc Sở/Học viện">
+                        <i class="bi bi-star-fill text-danger"></i>
+                        <span>Giám đốc</span>
+                    </button>
+                </form>
+
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="manager" />
+                    <button type="submit" class="btn-switch-role role-manager" title="Lê Trưởng Phòng - Trưởng phòng Đào tạo">
+                        <i class="bi bi-briefcase-fill text-primary"></i>
+                        <span>Trưởng phòng</span>
+                    </button>
+                </form>
+
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="officer1" />
+                    <button type="submit" class="btn-switch-role role-officer" title="Nguyễn Chuyên Viên - Chuyên viên">
+                        <i class="bi bi-person-badge-fill text-success"></i>
+                        <span>Chuyên viên</span>
+                    </button>
+                </form>
+
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="hr_admin" />
+                    <button type="submit" class="btn-switch-role role-hr" title="Vũ Thị Nhân Sự - Cán bộ TCCB (HR)">
+                        <i class="bi bi-people-fill" style="color: #c084fc;"></i>
+                        <span>Tổ chức CB</span>
+                    </button>
+                </form>
+
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="accountant" />
+                    <button type="submit" class="btn-switch-role role-accountant" title="Hoàng Kế Toán - Kế toán lương & Tiền mặt">
+                        <i class="bi bi-cash-stack text-warning"></i>
+                        <span>Kế toán</span>
+                    </button>
+                </form>
+
+                <form asp-action="QuickSwitch" method="post" class="w-100">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="role" value="admin" />
+                    <button type="submit" class="btn-switch-role role-admin" title="Quản trị viên Hệ thống">
+                        <i class="bi bi-gear-fill text-secondary"></i>
+                        <span>Quản trị</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer note -->
+            <div class="text-center mt-4 small" style="color: #64748b; font-size: 11.5px;">
+                Mật khẩu dùng thử mặc định cho mọi tài khoản: <code class="text-primary fw-bold bg-primary-subtle px-2 py-0 rounded">123456</code><br/>
+                Bảo vệ bởi Cơ chế Khóa 5 lần (Lockout 30 phút)
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: Typing animation, Password Toggle, Ripple Effect -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Password Visibility Toggle
+            const toggleBtn = document.getElementById('togglePasswordBtn');
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+
+            toggleBtn.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                toggleIcon.classList.toggle('bi-eye');
+                toggleIcon.classList.toggle('bi-eye-slash');
+            });
+
+            // 2. Typing animation placeholder for Username
+            const usernameInput = document.getElementById('usernameInput');
+            const demoAccounts = ['director', 'manager', 'officer1', 'hr_admin', 'accountant', 'admin'];
+            let accountIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let typingTimeout;
+
+            function typePlaceholder() {
+                // Chỉ chạy khi user chưa click hoặc nhập gì vào ô
+                if (document.activeElement === usernameInput || usernameInput.value.length > 0) {
+                    return;
+                }
+
+                const currentAccount = demoAccounts[accountIndex];
+                if (isDeleting) {
+                    usernameInput.setAttribute('placeholder', 'Thử nhập: ' + currentAccount.substring(0, charIndex));
+                    charIndex--;
+                    if (charIndex < 0) {
+                        isDeleting = false;
+                        accountIndex = (accountIndex + 1) % demoAccounts.length;
+                        typingTimeout = setTimeout(typePlaceholder, 400);
+                        return;
+                    }
+                } else {
+                    usernameInput.setAttribute('placeholder', 'Thử nhập: ' + currentAccount.substring(0, charIndex));
+                    charIndex++;
+                    if (charIndex > currentAccount.length) {
+                        isDeleting = true;
+                        typingTimeout = setTimeout(typePlaceholder, 1800);
+                        return;
+                    }
+                }
+                typingTimeout = setTimeout(typePlaceholder, isDeleting ? 45 : 90);
+            }
+
+            typePlaceholder();
+
+            usernameInput.addEventListener('focus', function () {
+                clearTimeout(typingTimeout);
+                usernameInput.setAttribute('placeholder', 'Tài khoản hoặc email...');
+            });
+
+            // 3. Ripple effect for button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.addEventListener('click', function (e) {
+                const ripple = document.createElement('span');
+                const rect = submitBtn.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.4)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple 0.6s linear';
+                ripple.style.pointerEvents = 'none';
+
+                submitBtn.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body>
+</html>

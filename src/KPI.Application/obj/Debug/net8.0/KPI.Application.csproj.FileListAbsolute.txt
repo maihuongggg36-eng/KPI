@@ -1,0 +1,15 @@
+d:\KPI\src\KPI.Application\bin\Debug\net8.0\KPI.Application.deps.json
+d:\KPI\src\KPI.Application\bin\Debug\net8.0\KPI.Application.dll
+d:\KPI\src\KPI.Application\bin\Debug\net8.0\KPI.Application.pdb
+d:\KPI\src\KPI.Application\bin\Debug\net8.0\KPI.Domain.dll
+d:\KPI\src\KPI.Application\bin\Debug\net8.0\KPI.Domain.pdb
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.csproj.AssemblyReference.cache
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.GeneratedMSBuildEditorConfig.editorconfig
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.AssemblyInfoInputs.cache
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.AssemblyInfo.cs
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.csproj.CoreCompileInputs.cache
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Appl.9592A759.Up2Date
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.dll
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\refint\KPI.Application.dll
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\KPI.Application.pdb
+d:\KPI\src\KPI.Application\obj\Debug\net8.0\ref\KPI.Application.dll

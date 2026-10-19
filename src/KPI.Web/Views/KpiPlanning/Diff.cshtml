@@ -1,0 +1,211 @@
+@model KPI.Web.ViewModels.Planning.RevisionDiffViewModel
+@{
+    ViewData["Title"] = "So Sánh Lịch Sử Điều Chỉnh KPI — Diff Comparison";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var diff = Model.DiffData;
+    var hasDiff = diff.Differences.Any();
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/KpiPlanning/Approvals">Kế hoạch KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">So sánh điều chỉnh (Diff)</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-clock-history me-2 text-primary"></i>So Sánh Lịch Sử Điều Chỉnh KPI Giữa Kỳ (Diff Comparison)
+            </h1>
+            <p class="text-secondary small mb-0">Theo dõi chi tiết các biến động về chỉ tiêu, mục tiêu công việc và phân bổ lại trọng số</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/KpiPlanning/Approvals" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Danh sách phê duyệt
+            </a>
+            @if (Model.Assignment != null)
+            {
+                <button type="button" class="btn btn-warning rounded-pill px-3 text-dark fw-bold" onclick="openRevisionModal(@Model.Assignment.Id)">
+                    <i class="bi bi-sliders me-1"></i>Tạo điều chỉnh mới
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- REVISION METADATA BANNER -->
+    <div class="card-enterprise p-4 mb-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-md-6 border-end">
+                <div class="text-secondary small">Cán bộ áp dụng:</div>
+                <h4 class="fw-bold mb-1 text-dark">@diff.EmployeeName</h4>
+                <div class="text-muted small">
+                    <span class="badge bg-dark me-2">Kỳ: @diff.PeriodName</span>
+                    <span>So sánh phiên bản: <strong>v@diff.VersionFrom</strong> <i class="bi bi-arrow-right mx-1 text-primary"></i> <strong>v@diff.VersionTo</strong></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-secondary small">Lý do điều chỉnh ghi nhận:</div>
+                <div class="p-2 rounded bg-light-subtle border fst-italic text-dark mt-1">
+                    "@diff.RevisionReason"
+                </div>
+                <div class="small text-muted mt-1">
+                    <i class="bi bi-clock me-1"></i>Thời điểm cập nhật: @diff.RevisionTime.ToString("dd/MM/yyyy HH:mm:ss")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!hasDiff)
+    {
+        <!-- EMPTY STATE -->
+        <div class="card-enterprise p-5 text-center my-4">
+            <i class="bi bi-check-circle text-success display-4 mb-3 opacity-75"></i>
+            <h5 class="fw-bold text-dark">Bản giao KPI chưa có biến động điều chỉnh giữa kỳ</h5>
+            <p class="text-secondary mb-3 small">Bản giao này đang được áp dụng theo đúng thiết lập ban đầu (Phiên bản v1).</p>
+            @if (Model.Assignment != null)
+            {
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="openRevisionModal(@Model.Assignment.Id)">
+                    <i class="bi bi-plus-lg me-1"></i>Tạo điều chỉnh giữa kỳ lần đầu
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- DIFF SUMMARY METRIC STATS -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-md-3">
+                <div class="p-3 rounded-3 bg-warning-subtle border border-warning-subtle text-center">
+                    <div class="small text-warning fw-semibold">Thay đổi trọng số/Target</div>
+                    <h3 class="fw-bold mb-0 text-warning font-mono">@diff.Differences.Count(d => d.ChangeType == "MODIFIED")</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="p-3 rounded-3 bg-success-subtle border border-success-subtle text-center">
+                    <div class="small text-success fw-semibold">Chỉ tiêu bổ sung mới</div>
+                    <h3 class="fw-bold mb-0 text-success font-mono">@diff.Differences.Count(d => d.ChangeType == "ADDED")</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="p-3 rounded-3 bg-danger-subtle border border-danger-subtle text-center">
+                    <div class="small text-danger fw-semibold">Chỉ tiêu bị loại bỏ</div>
+                    <h3 class="fw-bold mb-0 text-danger font-mono">@diff.Differences.Count(d => d.ChangeType == "REMOVED")</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="p-3 rounded-3 bg-light-subtle border text-center">
+                    <div class="small text-secondary fw-semibold">Chỉ tiêu giữ nguyên</div>
+                    <h3 class="fw-bold mb-0 text-secondary font-mono">@diff.Differences.Count(d => d.ChangeType == "UNCHANGED")</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIFF DETAIL TABLE -->
+        <div class="card-enterprise">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-primary-emphasis">
+                    <i class="bi bi-git me-2 text-primary"></i>Chi Tiết So Sánh Từng Chỉ Tiêu (Side-by-side Delta)
+                </h6>
+                <span class="badge bg-secondary font-mono">Tổng: @diff.Differences.Count chỉ tiêu</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Chỉ Tiêu KPI</th>
+                            <th>Trạng Thái Thay Đổi</th>
+                            <th>Mục Tiêu Cũ (v@diff.VersionFrom)</th>
+                            <th>Mục Tiêu Mới (v@diff.VersionTo)</th>
+                            <th>Trọng Số Cũ</th>
+                            <th>Trọng Số Mới</th>
+                            <th>Diễn Giải Biến Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in diff.Differences)
+                        {
+                            var rowClass = item.ChangeType switch
+                            {
+                                "ADDED" => "table-success-subtle",
+                                "REMOVED" => "table-danger-subtle",
+                                "MODIFIED" => "table-warning-subtle",
+                                _ => ""
+                            };
+
+                            var badgeClass = item.ChangeType switch
+                            {
+                                "ADDED" => "bg-success text-white",
+                                "REMOVED" => "bg-danger text-white",
+                                "MODIFIED" => "bg-warning text-dark",
+                                _ => "bg-light text-muted border"
+                            };
+
+                            <tr class="@rowClass">
+                                <td>
+                                    <div class="fw-bold">@item.KpiName</div>
+                                    <span class="badge bg-dark font-mono small">@item.KpiCode</span>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass font-mono">@item.ChangeType</span>
+                                </td>
+                                <td class="font-mono">
+                                    @(item.ChangeType == "ADDED" ? "--" : $"{item.OldTarget} {item.Unit}")
+                                </td>
+                                <td class="font-mono fw-bold">
+                                    @(item.ChangeType == "REMOVED" ? "--" : $"{item.NewTarget} {item.Unit}")
+                                </td>
+                                <td class="font-mono">
+                                    @(item.ChangeType == "ADDED" ? "--" : $"{item.OldWeight}%")
+                                </td>
+                                <td class="font-mono fw-bold">
+                                    @(item.ChangeType == "REMOVED" ? "--" : $"{item.NewWeight}%")
+                                </td>
+                                <td class="small text-secondary">
+                                    @item.Description
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- MODAL TẠO ĐIỀU CHỈNH GIỮA KỲ -->
+<div class="modal fade" id="modalCreateRevision" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-warning-emphasis"><i class="bi bi-sliders me-2 text-warning"></i>Khởi Tạo Điều Chỉnh KPI Giữa Kỳ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-secondary mb-3">
+                    Quy trình điều chỉnh giữa kỳ cho phép cập nhật lại danh mục chỉ tiêu, thay đổi mục tiêu (Target) hoặc cơ cấu lại trọng số theo đúng quy định <strong>BR-01</strong> ($\sum = 100\%$) và <strong>BR-02</strong>. Hệ thống sẽ tự động lưu lại bản chụp (snapshot) của phiên bản hiện tại trước khi cập nhật.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do điều chỉnh nhiệm vụ công tác <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="modal-revision-reason" rows="3" placeholder="Ví dụ: Phân công thêm nhiệm vụ công tác kiểm định số liệu tháng 3/2026 theo Quyết định số..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                <a href="/KpiPlanning/Assign?id=@Model.Assignment?.Id" class="btn btn-warning rounded-pill px-4 fw-bold">
+                    <i class="bi bi-pencil-square me-1"></i>Mở Wizard Điều Chỉnh Ngay
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRevisionModal(id) {
+            new bootstrap.Modal(document.getElementById('modalCreateRevision')).show();
+        }
+    </script>
+}

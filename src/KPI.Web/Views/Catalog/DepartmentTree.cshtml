@@ -1,0 +1,211 @@
+@model KPI.Web.ViewModels.Catalog.DepartmentTreeViewModel
+@{
+    ViewData["Title"] = "Sơ đồ Cây Phân cấp Phòng ban";
+    ViewData["BreadcrumbItems"] = new List<(string Title, string Url)>
+    {
+        ("Quản trị Danh mục", "/Catalog"),
+        ("Sơ đồ Cây Phòng ban", "/Catalog/DepartmentTree")
+    };
+}
+
+<!-- Top Header Banner -->
+<div class="card-enterprise p-4 mb-4" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border-left: 4px solid var(--color-primary);">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary fw-bold">
+                    <i class="bi bi-diagram-3-fill me-1"></i>Mô hình Cây Đệ quy (Closure Table Hierarchy)
+                </span>
+                <span class="badge bg-success-subtle text-success">@Model.TotalDepartments Đơn vị trực thuộc</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-primary-emphasis">Cơ cấu Tổ chức & Sơ đồ Cây Phân cấp Phòng ban</h3>
+            <p class="text-secondary small mb-0">
+                Quản lý cây phòng ban đa cấp, phân định thẩm quyền chấm thẩm định và phạm vi dữ liệu phân quyền (Data Scope).
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="expandAllTreeNodes()">
+                <i class="bi bi-arrows-expand me-1"></i> Mở rộng tất cả
+            </button>
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="collapseAllTreeNodes()">
+                <i class="bi bi-arrows-collapse me-1"></i> Thu gọn
+            </button>
+            <button class="btn btn-primary btn-sm rounded-pill px-3 btn-lift" onclick="openNewDeptModal(null)">
+                <i class="bi bi-plus-lg me-1"></i> Thêm Đơn vị Cấp cao
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cột trái: Sơ đồ Cây Tương tác (Tree View 65%) -->
+    <div class="col-lg-8">
+        <div class="card-enterprise h-100 p-4">
+            <div class="d-flex justify-content-between align-items-center pb-3 border-bottom mb-3">
+                <h5 class="fw-bold mb-0 text-primary-emphasis">
+                    <i class="bi bi-building me-2 text-primary"></i>Học viện Hành chính và Quản trị công
+                </h5>
+                <span class="badge bg-primary-subtle text-primary">Root</span>
+            </div>
+
+            <!-- Cây phân cấp -->
+            <div class="dept-tree-container" id="deptTreeRoot">
+                @foreach (var node in Model.Tree)
+                {
+                    <div class="dept-tree-node mb-3" data-id="@node.Id">
+                        <div class="dept-node-card p-3 rounded-3 border bg-surface-hover d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-light rounded-circle node-toggle-btn p-0" style="width: 28px; height: 28px;" onclick="toggleTreeNode(this)">
+                                    <i class="bi @(node.Children.Any() ? "bi-chevron-down" : "bi-dot")"></i>
+                                </button>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                                     style="width: 38px; height: 38px; background: @(node.Level == 1 ? "var(--color-primary)" : "var(--color-info)");">
+                                    <i class="bi @(node.Level == 1 ? "bi-award" : "bi-folder2-open") fs-6"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-6">
+                                        @node.Name 
+                                        <span class="badge bg-dark font-mono small ms-1">@node.Code</span>
+                                    </div>
+                                    <div class="text-secondary small">
+                                        <i class="bi bi-person me-1"></i>@node.ManagerName • <i class="bi bi-people me-1"></i>@node.EmployeeCount nhân sự • <span class="font-mono text-muted">@node.TreePath</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hành động trên node -->
+                            <div class="d-flex gap-1 align-items-center">
+                                <button class="btn btn-sm btn-outline-success rounded-circle" title="Thêm đơn vị con" onclick="openNewDeptModal(@node.Id)">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary rounded-circle" title="Chỉnh sửa" onclick="editDeptNode(@node.Id, '@node.Code', '@node.Name')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning rounded-circle" title="Di chuyển cấp cha" onclick="openMoveDeptModal(@node.Id, '@node.Name')">
+                                    <i class="bi bi-arrows-move"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa đơn vị" onclick="confirmDeleteDept(@node.Id, '@node.Name')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cấp con (Recursive Children) -->
+                        @if (node.Children.Any())
+                        {
+                            <div class="dept-children-container ps-4 pt-2 border-start ms-4 mt-2">
+                                @foreach (var child in node.Children)
+                                {
+                                    <div class="dept-child-card p-2 rounded-3 border bg-surface-hover d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-arrow-return-right text-secondary"></i>
+                                            <span class="badge bg-dark font-mono">@child.Code</span>
+                                            <span class="fw-semibold small">@child.Name</span>
+                                            <small class="text-secondary">(@child.EmployeeCount cán bộ)</small>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-primary rounded-circle p-0" style="width: 26px; height: 26px;" onclick="editDeptNode(@child.Id, '@child.Code', '@child.Name')">
+                                                <i class="bi bi-pencil small"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger rounded-circle p-0" style="width: 26px; height: 26px;" onclick="confirmDeleteDept(@child.Id, '@child.Name')">
+                                                <i class="bi bi-trash small"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột phải: Bảng Thống kê & Thao tác Nhanh (35%) -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100 p-4">
+            <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                <h6 class="fw-bold mb-0">Thông tin Phân cấp Tổ chức</h6>
+            </div>
+
+            <div class="p-3 rounded-3 bg-surface-hover border mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary small">Tổng số Đơn vị:</span>
+                    <strong class="fs-6">@Model.TotalDepartments</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary small">Cấp độ sâu tối đa:</span>
+                    <strong class="fs-6">Cấp 2</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-secondary small">Mô hình cây:</span>
+                    <span class="badge bg-primary-subtle text-primary">Closure Table</span>
+                </div>
+            </div>
+
+            <h6 class="fw-bold small text-uppercase text-secondary mb-2">ĐƯỜNG DẪN BREADCRUMB PHÒNG BAN:</h6>
+            <div class="d-flex flex-column gap-2 mb-4">
+                @foreach (var d in Model.FlatList)
+                {
+                    <div class="p-2 rounded border small d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>@d.Name</strong>
+                            <div class="text-muted font-mono" style="font-size: 11px;">@d.TreePath</div>
+                        </div>
+                        <span class="badge bg-secondary-subtle text-secondary">Cấp @d.Level</span>
+                    </div>
+                }
+            </div>
+
+            <div class="alert alert-info small mb-0">
+                <i class="bi bi-lightbulb-fill me-1"></i><strong>Quy tắc nghiệp vụ:</strong> Không thể xóa phòng ban đang có nhân sự trực thuộc hoặc phòng ban có chứa đơn vị cấp con.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Di chuyển Cấp cha -->
+<div class="modal fade" id="moveDeptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-arrows-move text-warning me-2"></i>Di chuyển Cấp Cha Phòng Ban
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="submitMoveDept(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="moveDeptId" />
+                    <p class="small text-secondary mb-3">
+                        Chọn đơn vị cấp cha mới cho: <strong id="moveDeptName" class="text-primary-emphasis"></strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Đơn vị Cấp Cha Mới</label>
+                        <select class="form-select form-control-enterprise" id="moveNewParentSelect">
+                            <option value="">(Cấp cao nhất - Trực thuộc Ban Giám đốc)</option>
+                            @foreach (var d in Model.FlatList)
+                            {
+                                <option value="@d.Id">@d.Name (@d.Code)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning text-dark btn-sm rounded-pill px-4 btn-lift">
+                        <i class="bi bi-check-lg me-1"></i> Xác nhận Di chuyển
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<partial name="_CatalogModals" />
+
+@section Scripts {
+    <script src="~/js/catalog-manager.js" asp-append-version="true"></script>
+}

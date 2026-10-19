@@ -1,0 +1,502 @@
+@model KPI.Application.DTOs.UserProfileDto
+@{
+    ViewData["Title"] = "Hồ Sơ Cán Bộ & Cài Đặt Cá Nhân";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var notif = Model.NotificationSettings;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Hồ sơ & Cài đặt</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-person-gear me-2 text-primary"></i>Hồ Sơ Cán Bộ & Cài Đặt Hệ Thống
+            </h1>
+            <p class="text-secondary small mb-0">
+                Quản lý thông tin cá nhân, cập nhật mật khẩu, tùy biến giao diện và cài đặt nhận thông báo thời gian thực
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="/Dashboard" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i>Về Dashboard
+            </a>
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="document.getElementById('formUpdateProfile').submit();">
+                <i class="bi bi-floppy me-1"></i>Lưu Thay Đổi
+            </button>
+        </div>
+    </div>
+
+    <!-- ALERT NOTIFICATIONS -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5 align-middle"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5 align-middle"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- CỘT TRÁI: THẺ THÔNG TIN TỔNG QUAN & AVATAR -->
+        <div class="col-lg-4">
+            <!-- AVATAR PROFILE CARD -->
+            <div class="card-enterprise p-4 text-center mb-4 shadow-sm position-relative overflow-hidden">
+                <div class="position-absolute top-0 start-0 w-100 bg-gradient-primary" style="height: 80px; opacity: 0.15;"></div>
+                
+                <div class="position-relative mt-2 mb-3 d-inline-block">
+                    @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl" alt="@Model.FullName" class="rounded-circle shadow border border-3 border-white object-fit-cover" style="width: 110px; height: 110px;" id="currentAvatarImg" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle shadow border border-3 border-white bg-primary text-white d-flex align-items-center justify-content-center mx-auto fs-1 fw-bold" style="width: 110px; height: 110px;">
+                            @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                        </div>
+                    }
+                    <button type="button" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow p-2" style="width: 34px; height: 34px;" data-bs-toggle="modal" data-bs-target="#avatarUploadModal" title="Đổi ảnh đại diện">
+                        <i class="bi bi-camera-fill small"></i>
+                    </button>
+                </div>
+
+                <h5 class="fw-bold text-dark mb-1">@Model.FullName</h5>
+                <div class="badge bg-primary-subtle text-primary font-mono mb-2">@Model.StaffCode</div>
+                <div class="text-secondary small mb-3">@Model.PositionName — @Model.DepartmentName</div>
+
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                        <i class="bi bi-shield-check me-1 text-primary"></i>@Model.RoleName
+                    </span>
+                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                        <i class="bi bi-circle-fill me-1 small"></i>Đang hoạt động
+                    </span>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                <div class="d-flex flex-column gap-2 text-start small text-muted">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="bi bi-envelope me-2"></i>Email:</span>
+                        <strong class="text-dark font-mono">@Model.Email</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="bi bi-telephone me-2"></i>Điện thoại:</span>
+                        <strong class="text-dark">@Model.Phone</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="bi bi-clock me-2"></i>Múi giờ:</span>
+                        <strong class="text-dark">@Model.Timezone</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHÍM TẮT & TRỢ GIÚP NHANH -->
+            <div class="card-enterprise p-4 shadow-sm">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-keyboard-fill me-2 text-warning"></i>Phím Tắt Tiện Ích
+                </h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                        <span>Tìm kiếm đa chiều</span>
+                        <kbd class="bg-dark text-white px-2 py-1 rounded">Ctrl + K</kbd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                        <span>Mở Bảng tra phím tắt</span>
+                        <kbd class="bg-dark text-white px-2 py-1 rounded">Shift + ?</kbd>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                        <span>Đóng popup / Modal</span>
+                        <kbd class="bg-dark text-white px-2 py-1 rounded">Esc</kbd>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: TABS CÀI ĐẶT CHI TIẾT -->
+        <div class="col-lg-8">
+            <div class="card-enterprise shadow-sm overflow-hidden">
+                <!-- NAV TABS -->
+                <ul class="nav nav-tabs nav-tabs-modern px-4 pt-3 border-bottom bg-light" id="profileTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-semibold" id="info-tab" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab">
+                            <i class="bi bi-person-lines-fill me-2"></i>Thông Tin Chung
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold" id="password-tab" data-bs-toggle="tab" data-bs-target="#tab-password" type="button" role="tab">
+                            <i class="bi bi-key-fill me-2 text-warning"></i>Đổi Mật Khẩu
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab">
+                            <i class="bi bi-sliders me-2 text-info"></i>Tùy Chọn & Thông Báo
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold" id="logs-tab" data-bs-toggle="tab" data-bs-target="#tab-logs" type="button" role="tab">
+                            <i class="bi bi-shield-check me-2 text-success"></i>Lịch Sử Đăng Nhập
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-4" id="profileTabContent">
+                    <!-- TAB 1: THÔNG TIN CHUNG & TÙY CHỌN -->
+                    <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+                        <form method="post" action="/Profile/Update" id="formUpdateProfile">
+                            @Html.AntiForgeryToken()
+                            <h5 class="fw-bold text-dark mb-3">Thông Tin Liên Hệ</h5>
+                            
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Họ và tên cán bộ:</label>
+                                    <input type="text" name="FullName" class="form-control" value="@Model.FullName" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Số điện thoại liên hệ:</label>
+                                    <input type="text" name="Phone" class="form-control" value="@Model.Phone" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Mã số cán bộ (Cố định):</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.StaffCode" readonly />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Tên đăng nhập hệ thống:</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.Username" readonly />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Phòng ban / Đơn vị:</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.DepartmentName" readonly />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Chức danh đảm nhiệm:</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.PositionName" readonly />
+                                </div>
+                            </div>
+
+                            <h5 class="fw-bold text-dark mb-3">Tùy Biến Giao Diện</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary fw-semibold">Chế độ hiển thị (Theme):</label>
+                                    <select name="Theme" class="form-select" id="selectThemePref">
+                                        <option value="dark" selected="@(Model.Theme == "dark")">Giao diện Tối (Dark Enterprise)</option>
+                                        <option value="light" selected="@(Model.Theme == "light")">Giao diện Sáng (Classic Light)</option>
+                                        <option value="auto" selected="@(Model.Theme == "auto")">Theo hệ điều hành (Auto)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary fw-semibold">Ngôn ngữ giao diện:</label>
+                                    <select name="Language" class="form-select">
+                                        <option value="vi" selected="@(Model.Language == "vi")">Tiếng Việt (Mặc định)</option>
+                                        <option value="en" selected="@(Model.Language == "en")">English</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary fw-semibold">Múi giờ làm việc:</label>
+                                    <select name="Timezone" class="form-select">
+                                        <option value="Asia/Ho_Chi_Minh" selected="@(Model.Timezone == "Asia/Ho_Chi_Minh")">Hà Nội (GMT+7)</option>
+                                        <option value="UTC" selected="@(Model.Timezone == "UTC")">UTC (GMT+0)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                    <i class="bi bi-check2-circle me-1"></i>Cập Nhật Thông Tin
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 2: ĐỔI MẬT KHẨU -->
+                    <div class="tab-pane fade" id="tab-password" role="tabpanel">
+                        <form method="post" action="/Profile/ChangePassword" id="formChangePassword">
+                            @Html.AntiForgeryToken()
+                            <h5 class="fw-bold text-dark mb-1">Thiết Lập Mật Khẩu Mới</h5>
+                            <p class="text-secondary small mb-4">
+                                Để đảm bảo an toàn thông tin, vui lòng sử dụng mật khẩu có độ dài tối thiểu 6 ký tự kết hợp chữ số và ký tự đặc biệt.
+                            </p>
+
+                            <div class="row g-3" style="max-width: 520px;">
+                                <div class="col-12">
+                                    <label class="form-label small text-secondary fw-semibold">Mật khẩu hiện tại:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-shield-lock"></i></span>
+                                        <input type="password" name="CurrentPassword" class="form-control" required placeholder="Nhập mật khẩu hiện tại" />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small text-secondary fw-semibold">Mật khẩu mới:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                                        <input type="password" name="NewPassword" id="inputNewPassword" class="form-control" required placeholder="Tối thiểu 6 ký tự" />
+                                    </div>
+                                    <div class="progress mt-2" style="height: 4px;">
+                                        <div class="progress-bar bg-danger" id="passwordStrengthBar" style="width: 25%"></div>
+                                    </div>
+                                    <div class="small text-muted mt-1" id="passwordStrengthText">Độ mạnh: Yếu</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small text-secondary fw-semibold">Xác nhận mật khẩu mới:</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-check2-circle"></i></span>
+                                        <input type="password" name="ConfirmPassword" class="form-control" required placeholder="Nhập lại mật khẩu mới" />
+                                    </div>
+                                </div>
+                                <div class="col-12 pt-2">
+                                    <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm fw-semibold">
+                                        <i class="bi bi-shield-lock me-1"></i>Xác Nhận Đổi Mật Khẩu
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 3: TÙY CHỌN THÔNG BÁO VÀ ÂM THANH -->
+                    <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+                        <form method="post" action="/Profile/Update">
+                            @Html.AntiForgeryToken()
+                            <h5 class="fw-bold text-dark mb-1">Cài Đặt Nhận Thông Báo</h5>
+                            <p class="text-secondary small mb-4">
+                                Lựa chọn các sự kiện quan trọng trong quy trình đánh giá KPI mà bạn muốn nhận thông báo thời gian thực và email.
+                            </p>
+
+                            <!-- ÂM THANH REALTIME -->
+                            <div class="card p-3 border rounded-3 bg-light mb-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="bi bi-volume-up-fill me-2 text-primary"></i>Âm thanh thông báo (Sound Effect)</div>
+                                        <div class="text-muted small">Phát âm thanh nhẹ khi có thông báo mới đến trong phiên làm việc</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="SoundEnabled" value="true" @(Model.SoundEnabled ? "checked" : "") id="soundToggleCheckbox">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CÁC SWITCHES SỰ KIỆN -->
+                            <div class="d-flex flex-column gap-3 mb-4">
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Giao KPI & Ký cam kết</div>
+                                        <div class="text-muted small">Thông báo khi có bản giao chỉ tiêu mới cần bạn xác nhận</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifyKpiAssigned" value="true" @(notif.NotifyKpiAssigned ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Tiến độ nộp Tự đánh giá</div>
+                                        <div class="text-muted small">Thông báo tới cấp quản lý khi nhân viên hoàn tất nộp điểm tự chấm</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifySelfAssessment" value="true" @(notif.NotifySelfAssessment ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Hoàn tất Thẩm định điểm</div>
+                                        <div class="text-muted small">Thông báo tới Lãnh đạo khi trưởng phòng ban hoàn tất thẩm định</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifyManagerReview" value="true" @(notif.NotifyManagerReview ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Quyết định Phê duyệt chính thức</div>
+                                        <div class="text-muted small">Thông báo khi Ban Giám đốc phê duyệt kết quả KPI và xếp loại NĐ 90</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifyDirectorApprove" value="true" @(notif.NotifyDirectorApprove ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Cảnh báo Thời hạn (Deadlines)</div>
+                                        <div class="text-muted small">Nhắc nhở tự động trước 3 ngày, 1 ngày hoặc khi quá hạn nộp KPI</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifyDeadlines" value="true" @(notif.NotifyDeadlines ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Cảnh báo Trần 20% Xuất sắc (BR-06)</div>
+                                        <div class="text-muted small">Cảnh báo khẩn cấp khi tỷ lệ xuất sắc của đơn vị vượt quá trần quy định</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.NotifyQuotaWarning" value="true" @(notif.NotifyQuotaWarning ? "checked" : "")>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 border">
+                                    <div>
+                                        <div class="fw-semibold text-dark">Gửi bản sao qua Thư điện tử (Email)</div>
+                                        <div class="text-muted small">Nhận thông báo qua địa chỉ email đăng ký trong hàng đợi tự động</div>
+                                    </div>
+                                    <div class="form-check form-switch fs-5">
+                                        <input class="form-check-input" type="checkbox" name="NotificationSettings.EmailNotification" value="true" @(notif.EmailNotification ? "checked" : "")>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                    <i class="bi bi-save me-1"></i>Lưu Tùy Chọn Thông Báo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 4: LỊCH SỬ ĐĂNG NHẬP -->
+                    <div class="tab-pane fade" id="tab-logs" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0">Lịch Sử Đăng Nhập & Kiểm Toán</h5>
+                                <div class="text-muted small">Ghi nhận các phiên truy cập gần nhất vào tài khoản của bạn</div>
+                            </div>
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill font-mono">
+                                10 phiên gần nhất
+                            </span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small text-uppercase">
+                                    <tr>
+                                        <th>Thời gian</th>
+                                        <th>Địa chỉ IP</th>
+                                        <th>Thiết bị / Trình duyệt</th>
+                                        <th class="text-center">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in Model.LoginHistory)
+                                    {
+                                        <tr>
+                                            <td class="font-mono small">
+                                                <i class="bi bi-clock me-1 text-muted"></i>@log.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")
+                                            </td>
+                                            <td class="font-mono small text-primary fw-semibold">
+                                                @log.IpAddress
+                                            </td>
+                                            <td class="small text-secondary">
+                                                <i class="bi bi-laptop me-1"></i>@log.DeviceInfo
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge @(log.Status == "Thành công" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") px-2 py-1">
+                                                    @log.Status
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL UPLOAD / CHỌN AVATAR -->
+<div class="modal fade" id="avatarUploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="bi bi-camera me-2 text-primary"></i>Thay Đổi Ảnh Đại Diện</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="post" action="/Profile/UploadAvatar" enctype="multipart/form-data" class="mb-4">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label fw-semibold small text-secondary">Tải ảnh từ máy tính (JPG, PNG, WEBP &le; 5MB):</label>
+                    <div class="input-group mb-2">
+                        <input type="file" name="avatarFile" class="form-control" accept="image/*" required />
+                        <button class="btn btn-primary" type="submit">Tải lên</button>
+                    </div>
+                </form>
+
+                <hr class="my-3 opacity-25" />
+
+                <label class="form-label fw-semibold small text-secondary mb-2">Hoặc chọn ảnh đại diện mẫu có sẵn:</label>
+                <form method="post" action="/Profile/SelectPresetAvatar">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex justify-content-center gap-3 flex-wrap mb-3">
+                        <button type="submit" name="avatarPreset" value="https://api.dicebear.com/7.x/bottts/svg?seed=Director" class="btn p-1 border rounded-circle hover-lift">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Director" style="width: 50px; height: 50px;" class="rounded-circle" />
+                        </button>
+                        <button type="submit" name="avatarPreset" value="https://api.dicebear.com/7.x/bottts/svg?seed=Professor" class="btn p-1 border rounded-circle hover-lift">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Professor" style="width: 50px; height: 50px;" class="rounded-circle" />
+                        </button>
+                        <button type="submit" name="avatarPreset" value="https://api.dicebear.com/7.x/bottts/svg?seed=Manager" class="btn p-1 border rounded-circle hover-lift">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Manager" style="width: 50px; height: 50px;" class="rounded-circle" />
+                        </button>
+                        <button type="submit" name="avatarPreset" value="https://api.dicebear.com/7.x/bottts/svg?seed=Scholar" class="btn p-1 border rounded-circle hover-lift">
+                            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Scholar" style="width: 50px; height: 50px;" class="rounded-circle" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Password strength meter
+        const passInput = document.getElementById("inputNewPassword");
+        const bar = document.getElementById("passwordStrengthBar");
+        const text = document.getElementById("passwordStrengthText");
+
+        if (passInput && bar && text) {
+            passInput.addEventListener("input", function () {
+                const val = passInput.value;
+                let score = 0;
+                if (val.length >= 6) score += 25;
+                if (/[A-Z]/.test(val)) score += 25;
+                if (/[0-9]/.test(val)) score += 25;
+                if (/[^A-Za-z0-9]/.test(val)) score += 25;
+
+                bar.style.width = score + "%";
+                if (score <= 25) {
+                    bar.className = "progress-bar bg-danger";
+                    text.textContent = "Độ mạnh: Rất yếu";
+                } else if (score <= 50) {
+                    bar.className = "progress-bar bg-warning";
+                    text.textContent = "Độ mạnh: Trung bình";
+                } else if (score <= 75) {
+                    bar.className = "progress-bar bg-info";
+                    text.textContent = "Độ mạnh: Khá";
+                } else {
+                    bar.className = "progress-bar bg-success";
+                    text.textContent = "Độ mạnh: Rất mạnh (Tốt)";
+                }
+            });
+        }
+    });
+</script>
+}

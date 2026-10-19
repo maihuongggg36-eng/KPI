@@ -1,0 +1,194 @@
+@model KPI.Web.ViewModels.Evaluation.ManagerEvaluationListViewModel
+@{
+    ViewData["Title"] = "Quản Lý Thẩm Định Đánh Giá KPI";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var periods = ViewBag.Periods as List<KPI.Application.DTOs.EvaluationPeriodDetailDto> ?? new();
+    var depts = ViewBag.Departments as List<KPI.Application.DTOs.DepartmentTreeNodeDto> ?? new();
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Thẩm Định KPI</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-clipboard2-check me-2 text-primary"></i>Danh Sách Hồ Sơ Cần Thẩm Định (Manager Review)
+            </h1>
+            <p class="text-secondary small mb-0">Quản lý trực tiếp thẩm định điểm số, đối chiếu minh chứng và giải trình chênh lệch theo BR-04 & BR-05</p>
+        </div>
+    </div>
+
+    <!-- STATS OVERVIEW CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-warning">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small text-uppercase">Chờ Thẩm Định</div>
+                        <div class="display-6 fw-bold font-mono text-warning">@Model.TotalPending</div>
+                    </div>
+                    <div class="bg-warning-subtle text-warning p-3 rounded-circle">
+                        <i class="bi bi-hourglass-split fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-success">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small text-uppercase">Đã Hoàn Thành Thẩm Định</div>
+                        <div class="display-6 fw-bold font-mono text-success">@Model.TotalApproved</div>
+                    </div>
+                    <div class="bg-success-subtle text-success p-3 rounded-circle">
+                        <i class="bi bi-check-circle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-danger">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small text-uppercase">Quá Hạn Tự Chấm (BR-12)</div>
+                        <div class="display-6 fw-bold font-mono text-danger">@Model.TotalOverdue</div>
+                    </div>
+                    <div class="bg-danger-subtle text-danger p-3 rounded-circle">
+                        <i class="bi bi-exclamation-triangle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4">
+        <form method="get" action="/Evaluation/ManagerList" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả các kỳ --</option>
+                    @foreach (var p in periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả phòng ban --</option>
+                    @foreach (var d in depts)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.SelectedDepartmentId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <a href="/Evaluation/ManagerList" class="btn btn-outline-secondary btn-sm rounded-pill w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- EVALUATION LIST TABLE -->
+    <div class="card-enterprise p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Cán bộ / Giảng viên</th>
+                        <th>Vị trí & Đơn vị</th>
+                        <th class="text-center">Kỳ đánh giá</th>
+                        <th class="text-center">Điểm Tự Chấm</th>
+                        <th class="text-center">Điểm Quản Lý</th>
+                        <th class="text-center">Trạng thái (BR-04)</th>
+                        <th style="width: 140px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Evaluations.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Không có hồ sơ đánh giá nào phù hợp với bộ lọc.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Model.Evaluations.Count; i++)
+                        {
+                            var item = Model.Evaluations[i];
+                            var canReview = item.Status == KPI.Domain.Enums.EvaluationStatus.Self_Submitted || 
+                                              item.Status == KPI.Domain.Enums.EvaluationStatus.Manager_Reviewing;
+
+                            <tr>
+                                <td class="text-center font-mono text-muted">@(i + 1)</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@item.AvatarUrl" alt="" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
+                                        <div>
+                                            <div class="fw-bold text-dark">@item.EmployeeName</div>
+                                            <div class="font-mono text-muted small">@item.EmployeeCode</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-dark small">@item.PositionName</div>
+                                    <div class="text-muted small">@item.DepartmentName</div>
+                                </td>
+                                <td class="text-center small">
+                                    <div class="badge bg-light text-dark font-mono">@item.PeriodName</div>
+                                </td>
+                                <td class="text-center font-mono fw-bold text-primary">
+                                    @item.SelfTotalScore.ToString("F1")
+                                </td>
+                                <td class="text-center font-mono fw-bold text-success">
+                                    @(item.ManagerTotalScore > 0 ? item.ManagerTotalScore.ToString("F1") : "-")
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @item.StatusBadgeClass rounded-pill px-2 py-1 small">
+                                        @item.StatusName
+                                    </span>
+                                    @if (!canReview && (item.Status == KPI.Domain.Enums.EvaluationStatus.Not_Started || item.Status == KPI.Domain.Enums.EvaluationStatus.Self_Assessing))
+                                    {
+                                        <div class="text-danger small fst-italic mt-1" style="font-size: 11px;">
+                                            <i class="bi bi-lock me-1"></i>Chưa nộp tự chấm (BR-04)
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (canReview)
+                                    {
+                                        <a href="/Evaluation/ManagerReview?evaluationId=@item.Id" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-pencil-square me-1"></i>Thẩm Định
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Evaluation/ManagerReview?evaluationId=@item.Id" class="btn btn-light btn-sm rounded-pill px-3 text-secondary">
+                                            <i class="bi bi-eye me-1"></i>Xem Chi Tiết
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

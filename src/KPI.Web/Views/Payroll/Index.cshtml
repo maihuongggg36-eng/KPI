@@ -1,0 +1,283 @@
+@model KPI.Web.ViewModels.Payroll.PayrollIndexViewModel
+@{
+    ViewData["Title"] = "Bảng Tính Lương Theo KPI (P3) & Chi Trả Tiền Mặt";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var stats = Model.Stats;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Lương 3P & Chi trả Tiền mặt</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-cash-stack me-2 text-success"></i>Bảng Tính Lương Theo KPI (P3) & Quản Lý Chi Tiền Mặt
+            </h1>
+            <p class="text-secondary small mb-0">
+                Gắn kết quả đánh giá KPI với thu nhập hiệu quả công tác (P1-P2-P3), lập phiếu chi Mẫu 02-TT và bảng ký nhận Mẫu 05a
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if (Model.CanCalculateAndDisburse)
+            {
+                <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" id="btnCalculateAll">
+                    <i class="bi bi-calculator me-1"></i>Tính Lương Toàn Bộ
+                </button>
+                <button type="button" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm" id="btnPayAllCash">
+                    <i class="bi bi-check-all me-1"></i>Chi Tiền Mặt Hàng Loạt
+                </button>
+            }
+            <a href="/Payroll/CashSheet?periodId=@Model.SelectedPeriodId" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                <i class="bi bi-card-checklist me-1"></i>Bảng Ký Nhận Mẫu 05a
+            </a>
+            <a href="/Payroll/Reports?periodId=@Model.SelectedPeriodId" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-bar-chart-line me-1"></i>Báo Cáo Quỹ Lương
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS OVERVIEW CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Tổng nhân sự -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-primary">
+                <div class="text-secondary small text-uppercase fw-semibold">Tổng Cán Bộ Lập Lương</div>
+                <div class="display-6 fw-bold font-mono text-primary my-1">@stats.TotalEmployees</div>
+                <div class="small text-muted">Kỳ: <span class="fw-semibold text-dark">@Model.Periods.FirstOrDefault(p => p.Id == Model.SelectedPeriodId)?.Name</span></div>
+            </div>
+        </div>
+
+        <!-- 2. Tổng quỹ lương thực lĩnh -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-success">
+                <div class="text-secondary small text-uppercase fw-semibold">Tổng Quỹ Lương Thực Lĩnh</div>
+                <div class="display-6 fw-bold font-mono text-success my-1" style="font-size: 1.6rem;">
+                    @stats.TotalNetSalary.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">P3 (KPI): <strong class="text-success font-mono">@stats.TotalP3Salary.ToString("N0") đ</strong></div>
+            </div>
+        </div>
+
+        <!-- 3. Đã chi tiền mặt -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Đã Chi Tiền Mặt</span>
+                    <span class="badge bg-success-subtle text-success font-mono">@stats.PaymentRate%</span>
+                </div>
+                <div class="display-6 fw-bold font-mono text-info my-1" style="font-size: 1.6rem;">
+                    @stats.TotalCashPaid.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">Đã ký nhận: <strong class="text-dark font-mono">@stats.CountPaid / @stats.TotalEmployees</strong> CB</div>
+            </div>
+        </div>
+
+        <!-- 4. Chưa chi tiền mặt -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-warning">
+                <div class="text-secondary small text-uppercase fw-semibold">Chờ Chi Tiền Mặt</div>
+                <div class="display-6 fw-bold font-mono text-warning my-1" style="font-size: 1.6rem;">
+                    @stats.TotalCashPending.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">Chưa ký nhận: <strong class="text-danger font-mono">@stats.CountPending</strong> CB</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4">
+        <form method="get" action="/Payroll/Index" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả phòng ban --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.SelectedDepartmentId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Trạng thái thanh toán:</label>
+                <select name="paymentStatus" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="Đã thanh toán" selected="@(Model.SelectedPaymentStatus == "Đã thanh toán")">Đã thanh toán</option>
+                    <option value="Chưa thanh toán" selected="@(Model.SelectedPaymentStatus == "Chưa thanh toán")">Chưa thanh toán</option>
+                </select>
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
+                <a href="/Payroll/Index?periodId=@Model.SelectedPeriodId" class="btn btn-outline-secondary btn-sm rounded-pill w-100" title="Đặt lại bộ lọc">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- MAIN PAYROLL TABLE -->
+    <div class="card-enterprise p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-table me-2 text-primary"></i>Bảng Tổng Hợp Lương Gắn Với KPI (Mô Hình 3P)
+                </h5>
+                <span class="text-muted small">Công thức: <strong>Lương P3 = Lương Cơ Bản &times; HSL &times; Hệ Số KPI</strong> | Chi trả: 100% Tiền mặt</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm" style="width: 240px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0" id="txtQuickSearchPayroll" placeholder="Lọc theo tên, mã..." />
+                </div>
+                <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1 font-mono">
+                    @Model.Items.Count Nhân sự
+                </span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0" id="tblPayroll">
+                <thead class="table-light text-secondary text-uppercase" style="font-size: 11px;">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th>Cán bộ / Giảng viên</th>
+                        <th>Phòng ban</th>
+                        <th class="text-end">Lương CB (P1)</th>
+                        <th class="text-center">HSL</th>
+                        <th class="text-center">Điểm KPI</th>
+                        <th class="text-center">Hệ số KPI</th>
+                        <th class="text-end">Lương P3 (KPI)</th>
+                        <th class="text-end fw-bold text-success">Thực lĩnh</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th style="width: 140px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="11" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có dữ liệu tính lương cho kỳ này. Vui lòng bấm <strong>"Tính Lương Toàn Bộ"</strong> để tạo bảng lương.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            var item = Model.Items[i];
+                            <tr class="@item.RowStatusClass">
+                                <td class="text-center font-mono text-muted">@(i + 1)</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.FullName</div>
+                                    <div class="font-mono text-muted" style="font-size: 10px;">@item.StaffCode &bull; @item.PositionName</div>
+                                </td>
+                                <td class="text-secondary">@item.DepartmentName</td>
+                                <td class="text-end font-mono">@item.BaseSalary.ToString("N0")</td>
+                                <td class="text-center font-mono fw-semibold">@item.SalaryCoefficient.ToString("F2")</td>
+                                <td class="text-center font-mono fw-bold text-primary">@item.KpiScore.ToString("F1")</td>
+                                <td class="text-center font-mono">
+                                    <span class="badge @(item.KpiMultiplier >= 1.3m ? "bg-warning text-dark" : (item.KpiMultiplier >= 1.15m ? "bg-success" : (item.KpiMultiplier >= 1.0m ? "bg-primary" : "bg-danger"))) font-mono">
+                                        &times;@item.KpiMultiplier.ToString("F2")
+                                    </span>
+                                </td>
+                                <td class="text-end font-mono fw-bold text-primary">@item.P3Salary.ToString("N0")</td>
+                                <td class="text-end font-mono fw-bold text-success fs-6">@item.NetSalary.ToString("N0") đ</td>
+                                <td class="text-center">
+                                    @if (item.IsPaid)
+                                    {
+                                        <span class="badge bg-success rounded-pill px-2 py-1" title="@item.RecipientSignature">
+                                            <i class="bi bi-check-circle me-1"></i>Đã thanh toán
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-2 py-1">
+                                            <i class="bi bi-clock me-1"></i>Chưa thanh toán
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/Payroll/Voucher?id=@item.Id" target="_blank" class="btn btn-outline-primary" title="In Phiếu chi Mẫu 02-TT">
+                                            <i class="bi bi-receipt"></i>
+                                        </a>
+                                        @if (Model.CanCalculateAndDisburse && !item.IsPaid)
+                                        {
+                                            <button type="button" class="btn btn-outline-success btn-pay-single" 
+                                                    data-id="@item.Id" data-name="@item.FullName" data-amount="@item.NetSalary.ToString("N0")"
+                                                    title="Xác nhận chi tiền mặt">
+                                                <i class="bi bi-cash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL XÁC NHẬN CHI TIỀN MẶT ĐƠN LẺ -->
+<div class="modal fade" id="modalPayCash" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-cash-coin me-2"></i>Xác Nhận Ký Nhận Chi Tiền Mặt
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="payModalPayrollId" />
+                <div class="mb-3">
+                    <label class="text-secondary small">Cán bộ nhận tiền:</label>
+                    <div class="fw-bold fs-6 text-dark" id="payModalEmployeeName"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-secondary small">Số tiền chi tiền mặt:</label>
+                    <div class="display-6 fw-bold font-mono text-success" id="payModalAmount"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Nội dung xác nhận ký nhận:</label>
+                    <input type="text" class="form-control" id="payModalSignature" value="Đã nhận đủ tiền mặt tại quỹ Học viện" />
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success rounded-pill px-4" id="btnConfirmPayCash">
+                    <i class="bi bi-check2 me-1"></i>Xác Nhận Đã Chi Tiền
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.payrollConfig = {
+        periodId: @Model.SelectedPeriodId
+    };
+</script>
+<script src="~/js/payroll.js"></script>

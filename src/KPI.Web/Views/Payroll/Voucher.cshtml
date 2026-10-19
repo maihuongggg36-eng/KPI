@@ -1,0 +1,317 @@
+@model KPI.Web.ViewModels.Payroll.CashVoucherViewModel
+@{
+    Layout = null;
+    var v = Model.Voucher;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@($"Phiếu Chi {v.VoucherCode} - {v.FullName}")</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        @@page {
+            size: A4 portrait;
+            margin: 20mm 15mm 20mm 20mm;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 13pt;
+            line-height: 1.4;
+            color: #000;
+            background: #f1f5f9;
+        }
+
+        .print-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            padding: 20mm 15mm 20mm 20mm;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-print-bar {
+            width: 210mm;
+            margin: 15px auto 0 auto;
+            padding: 10px 15px;
+            background: #1e293b;
+            color: #fff;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-print {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-back {
+            background: #475569;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+        }
+
+        .header-left {
+            width: 50%;
+            font-size: 11.5pt;
+        }
+
+        .header-right {
+            width: 50%;
+            text-align: center;
+            font-size: 11pt;
+        }
+
+        .form-code {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .form-decree {
+            font-style: italic;
+            font-size: 10pt;
+            line-height: 1.3;
+        }
+
+        .title-block {
+            text-align: center;
+            margin: 20px 0 15px 0;
+        }
+
+        .main-title {
+            font-size: 18pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .date-line {
+            font-style: italic;
+            font-size: 12pt;
+            margin-top: 4px;
+        }
+
+        .account-block {
+            display: flex;
+            justify-content: flex-end;
+            gap: 25px;
+            font-size: 11.5pt;
+            margin-bottom: 15px;
+            padding-right: 10px;
+        }
+
+        .info-row {
+            margin-bottom: 7px;
+            font-size: 13pt;
+            text-align: justify;
+        }
+
+        .amount-highlight {
+            font-weight: bold;
+            font-size: 13.5pt;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+
+        .signature-table td {
+            width: 20%;
+            vertical-align: top;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .sig-title {
+            font-weight: bold;
+            font-size: 11.5pt;
+            text-transform: uppercase;
+        }
+
+        .sig-sub {
+            font-style: italic;
+            font-size: 10pt;
+            margin-bottom: 60px;
+        }
+
+        .sig-name {
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .received-box {
+            margin-top: 25px;
+            border-top: 1px dashed #666;
+            padding-top: 15px;
+            font-size: 12.5pt;
+        }
+
+        @@media print {
+            body {
+                background: #fff;
+            }
+            .no-print, .no-print-bar {
+                display: none !important;
+            }
+            .print-container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOOLBAR -->
+    <div class="no-print-bar">
+        <div>
+            <strong>Mẫu số 02 - TT</strong> &bull; Phiếu chi tiền mặt theo Thông tư 133/2016/TT-BTC
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn-print">
+                <i class="bi bi-printer"></i> In Phiếu Chi (Ctrl + P)
+            </button>
+            <a href="/Payroll/Index" class="btn-back">
+                Đóng / Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN A4 PAGE CONTAINER -->
+    <div class="print-container">
+        <!-- HEADER -->
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    <div><strong>Đơn vị:</strong> @v.OrganizationName</div>
+                    <div><strong>Bộ phận:</strong> @v.DepartmentName</div>
+                    <div><strong>Mã phiếu:</strong> <span style="font-family: monospace; font-weight: bold;">@v.VoucherCode</span></div>
+                </td>
+                <td class="header-right">
+                    <div class="form-code">Mẫu số 02 - TT</div>
+                    <div class="form-decree">
+                        (Ban hành theo Thông tư số 133/2016/TT-BTC<br/>
+                        ngày 26/8/2016 của Bộ Tài chính)
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- TITLE -->
+        <div class="title-block">
+            <div class="main-title">PHIẾU CHI TIỀN MẶT</div>
+            <div class="date-line">@v.DateFormatted</div>
+        </div>
+
+        <!-- ĐỊNH KHOẢN KẾ TOÁN -->
+        <div class="account-block">
+            <div><strong>Nợ:</strong> @v.DebitAccount</div>
+            <div><strong>Có:</strong> @v.CreditAccount</div>
+        </div>
+
+        <!-- THÔNG TIN CHI TRẢ -->
+        <div class="info-row">
+            - Họ và tên người nhận tiền: <strong>@v.FullName</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Mã CB: <strong>@v.StaffCode</strong>)
+        </div>
+        <div class="info-row">
+            - Chức vụ / Đơn vị: <strong>@v.PositionName</strong> - <strong>@v.DepartmentName</strong>
+        </div>
+        <div class="info-row">
+            - Địa chỉ: <strong>@v.Address</strong>
+        </div>
+        <div class="info-row">
+            - Lý do chi: <strong>@v.Reason</strong>
+        </div>
+        <div class="info-row">
+            - Số tiền: <span class="amount-highlight">@v.Amount.ToString("N0") VNĐ</span>
+        </div>
+        <div class="info-row">
+            - Viết bằng chữ: <em>@v.AmountInWords</em>
+        </div>
+        <div class="info-row">
+            - Kèm theo: <strong>@v.Attachments</strong>
+        </div>
+
+        <div style="text-align: right; font-style: italic; margin-top: 15px; font-size: 11.5pt;">
+            Ngày @v.Day.ToString("D2") tháng @v.Month.ToString("D2") năm @v.Year
+        </div>
+
+        <!-- 5 CHỮ KÝ CHUẨN THÔNG TƯ 133 -->
+        <table class="signature-table">
+            <tr>
+                <td>
+                    <div class="sig-title">GIÁM ĐỐC</div>
+                    <div class="sig-sub">(Ký, họ tên, đóng dấu)</div>
+                    <div class="sig-name">@v.DirectorName</div>
+                </td>
+                <td>
+                    <div class="sig-title">KẾ TOÁN TRƯỞNG</div>
+                    <div class="sig-sub">(Ký, họ tên)</div>
+                    <div class="sig-name">@v.ChiefAccountantName</div>
+                </td>
+                <td>
+                    <div class="sig-title">THỦ QUỸ</div>
+                    <div class="sig-sub">(Ký, họ tên)</div>
+                    <div class="sig-name">@v.CashierName</div>
+                </td>
+                <td>
+                    <div class="sig-title">NGƯỜI LẬP PHIẾU</div>
+                    <div class="sig-sub">(Ký, họ tên)</div>
+                    <div class="sig-name">@v.PreparerName</div>
+                </td>
+                <td>
+                    <div class="sig-title">NGƯỜI NHẬN TIỀN</div>
+                    <div class="sig-sub">(Ký, họ tên)</div>
+                    <div class="sig-name">@v.FullName</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- KÝ NHẬN THỰC TẾ -->
+        <div class="received-box">
+            <div>Đã nhận đủ số tiền (viết bằng chữ): <em>@v.AmountInWords</em></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <div>Hình thức chi trả: <strong>100% Tiền mặt tại quỹ</strong></div>
+                <div>Tỷ giá quy đổi (nếu có): <strong>1.0</strong></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

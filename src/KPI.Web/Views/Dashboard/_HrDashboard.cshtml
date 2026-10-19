@@ -1,0 +1,174 @@
+@model KPI.Application.DTOs.HrDashboardDto
+
+<!-- 1. Bộ 4 Thẻ Thống kê & Kiểm soát Trần 20% Nghị định 90 -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tỷ lệ Xuất sắc Hiện tại", 
+            ["Value"] = $"{Model.ExcellentRate:N1}%", 
+            ["Subtitle"] = "1 / 6 cán bộ toàn cơ quan", 
+            ["Icon"] = "bi-shield-check", 
+            ["Color"] = "success",
+            ["Trend"] = "≤ 20% Trần NĐ 90",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Trần Khống chế Tối đa", 
+            ["Value"] = "≤ 20.0%", 
+            ["Subtitle"] = "Nghị định 90/2020/NĐ-CP (BR-06)", 
+            ["Icon"] = "bi-speedometer", 
+            ["Color"] = "primary",
+            ["Trend"] = "Quy định bắt buộc",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Công chức Biên chế", 
+            ["Value"] = $"{Model.CivilServantCount} cán bộ", 
+            ["Subtitle"] = "Đã bổ nhiệm ngạch bậc A1, A2, A3", 
+            ["Icon"] = "bi-award", 
+            ["Color"] = "info",
+            ["Trend"] = "66.7% tổng số",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Hợp đồng Lao động", 
+            ["Value"] = $"{Model.ContractStaffCount} nhân sự", 
+            ["Subtitle"] = "Chuyên viên công nghệ & hỗ trợ", 
+            ["Icon"] = "bi-briefcase", 
+            ["Color"] = "secondary",
+            ["Trend"] = "33.3% tổng số",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+</div>
+
+<!-- 2. Đồng hồ đo Trần Khống chế 20% & Cơ cấu Nhân sự -->
+<div class="row g-4 mb-4">
+    <!-- Đồng hồ đo Trần Khống chế 20% (Gauge Meter) -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-speedometer2 text-danger fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Đồng hồ Đo Trần 20% Xuất sắc</h6>
+                        <small class="text-secondary">Giám sát vi phạm Nghị định 90/2020</small>
+                    </div>
+                </div>
+                <span class="badge bg-success-subtle text-success">An toàn</span>
+            </div>
+            <div class="p-3 text-center d-flex flex-column justify-content-center">
+                <div id="hrGaugeChart" style="min-height: 250px;"></div>
+                <div class="mt-n2">
+                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold">
+                        <i class="bi bi-shield-check me-1"></i> Tỷ lệ: @Model.ExcellentRate% (≤ 20.0% Cho phép)
+                    </span>
+                    <p class="text-secondary small mt-2 mb-0">
+                        Cơ chế tự động chặn (Hard Lock) sẽ kích hoạt nếu tỷ lệ Xuất sắc vượt quá 20.0% tổng số cán bộ hoàn thành tốt trở lên.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cơ cấu nhân sự theo Đơn vị phòng ban -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-diagram-3-fill text-primary fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Cơ cấu theo Đơn vị / Phòng ban</h6>
+                        <small class="text-secondary">Phân bổ nhân sự 5 khối phòng ban</small>
+                    </div>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">5 Đơn vị</span>
+            </div>
+            <div class="p-3">
+                <div id="hrDeptChart" style="min-height: 280px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cơ cấu theo Ngạch bậc công chức -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-patch-check-fill text-info fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Cơ cấu Ngạch bậc Công chức</h6>
+                        <small class="text-secondary">Tỷ lệ Chuyên viên cao cấp, chính, ngạch</small>
+                    </div>
+                </div>
+                <span class="badge bg-info-subtle text-info">Ngạch bậc</span>
+            </div>
+            <div class="p-3">
+                <div id="hrRankChart" style="min-height: 280px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Bảng Cảnh báo & Tuân thủ Nghị định 90 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-fill-check text-success fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Bảng Giám sát Tuân thủ Nghị định 90/2020 & 48/2023/NĐ-CP (Quy chuẩn BR)</h6>
+                        <small class="text-secondary">Hệ thống AI giám sát quy tắc tự động phát hiện vi phạm và gửi cảnh báo</small>
+                    </div>
+                </div>
+                <span class="badge bg-success-subtle text-success">100% Tuân thủ</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Mã Quy tắc</th>
+                            <th>Nội dung Tiêu chuẩn Giám sát</th>
+                            <th>Đối tượng áp dụng</th>
+                            <th>Mức độ</th>
+                            <th>Kết quả Kiểm tra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var alert in Model.PolicyAlerts)
+                        {
+                            <tr>
+                                <td><span class="badge bg-dark font-mono">@alert.RuleCode</span></td>
+                                <td>
+                                    <div class="fw-bold">@alert.Title</div>
+                                    <small class="text-secondary">@alert.Description</small>
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">@alert.EntityRef</span></td>
+                                <td>
+                                    <span class="badge bg-@alert.Severity-subtle text-@alert.Severity">
+                                        @(alert.Severity == "danger" ? "Nghiêm trọng" : alert.Severity == "warning" ? "Cảnh báo" : "Thông tin")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success fw-bold">
+                                        <i class="bi bi-check-circle me-1"></i>@alert.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

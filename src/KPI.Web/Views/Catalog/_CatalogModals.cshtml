@@ -1,0 +1,170 @@
+<!-- MODAL 1: THÊM / SỬA CHỈ TIÊU KPI CHUẨN -->
+<div class="modal fade" id="kpiItemModal" tabindex="-1" aria-labelledby="kpiItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="kpiItemModalLabel">
+                    <i class="bi bi-journal-plus text-primary me-2"></i>Thêm Mới Chỉ Tiêu KPI Chuẩn
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="kpiItemForm" onsubmit="submitKpiItemForm(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="kpiItemId" value="0" />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Mã Chỉ Tiêu <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-enterprise font-mono" id="kpiItemCode" required placeholder="VD: KPI-DT-05" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold">Tên Chỉ Tiêu Công Tác <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-enterprise" id="kpiItemName" required placeholder="Nhập tên tiêu chí đo lường rõ ràng..." />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nhóm Chỉ Tiêu / Viễn Cảnh BSC</label>
+                            <select class="form-select form-control-enterprise" id="kpiItemCategory">
+                                <option value="1">Quy trình nội bộ & Nghiệp vụ đào tạo</option>
+                                <option value="2">Đạo đức công vụ & Kỷ cương hành chính</option>
+                                <option value="3">Phục vụ người học & Xã hội</option>
+                                <option value="4">Nghiên cứu khoa học & Phát triển</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Đơn Vị Tính</label>
+                            <select class="form-select form-control-enterprise" id="kpiItemUnit">
+                                <option value="1">% (Tỷ lệ phần trăm)</option>
+                                <option value="2">Hồ sơ / Lớp học</option>
+                                <option value="3">Giờ công tác</option>
+                                <option value="4">Điểm đánh giá</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Phương Pháp Đo</label>
+                            <select class="form-select form-control-enterprise" id="kpiItemMethod">
+                                <option value="1">Hệ thống CSDL Đào tạo</option>
+                                <option value="2">Thẩm định của Lãnh đạo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Công Thức Chấm Điểm</label>
+                            <select class="form-select form-control-enterprise" id="kpiItemFormula">
+                                <option value="HigherIsBetter">Càng cao càng tốt (Higher is Better)</option>
+                                <option value="LowerIsBetter">Càng thấp càng tốt (Lower is Better - Tỷ lệ lỗi, trễ hạn)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center pt-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="kpiItemCivilServant" />
+                                <label class="form-check-label small fw-semibold" for="kpiItemCivilServant">Chỉ áp dụng riêng cho Cán bộ Công chức</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Mô Tả & Hướng Dẫn Đo Lường Chi Tiết</label>
+                            <textarea class="form-control form-control-enterprise" id="kpiItemDescription" rows="3" placeholder="Quy định cách xác định kết quả, nguồn kiểm chứng minh chứng..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 btn-lift">
+                        <i class="bi bi-save me-1"></i> Lưu Chỉ Tiêu (Enter)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: SAO CHÉP / NHÂN BẢN KPI -->
+<div class="modal fade" id="cloneKpiModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-copy text-info me-2"></i>Nhân Bản Chỉ Tiêu KPI
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="submitCloneKpi(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="cloneSourceId" />
+                    <p class="small text-secondary mb-3">
+                        Tạo nhanh chỉ tiêu mới dựa trên cấu hình sẵn có của: <strong id="cloneSourceName" class="text-primary-emphasis"></strong>.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mã Chỉ Tiêu Mới <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise font-mono" id="cloneNewCode" required placeholder="VD: KPI-DT-05-COPY" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tên Chỉ Tiêu Mới <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise" id="cloneNewName" required placeholder="Nhập tên mới..." />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-info text-white btn-sm rounded-pill px-4 btn-lift">
+                        <i class="bi bi-check-lg me-1"></i> Tạo Bản Sao
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: THÊM / SỬA PHÒNG BAN -->
+<div class="modal fade" id="deptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="deptModalLabel">
+                    <i class="bi bi-diagram-3-fill text-primary me-2"></i>Thêm Mới Phòng Ban / Đơn Vị
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="submitDeptForm(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="deptId" value="0" />
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Thuộc Phòng Ban Cấp Cha</label>
+                        <select class="form-select form-control-enterprise" id="deptParentId">
+                            <option value="">(Cấp cao nhất - Trực thuộc Ban Giám đốc)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mã Phòng Ban <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise font-mono" id="deptCode" required placeholder="VD: P_NCKH" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tên Phòng Ban / Đơn Vị <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-enterprise" id="deptName" required placeholder="VD: Phòng Quản lý Nghiên cứu Khoa học" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 btn-lift">
+                        <i class="bi bi-save me-1"></i> Lưu Phòng Ban
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: XÁC NHẬN XÓA MỀM (CONFIRMATION) -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content card-enterprise border-0 text-center p-3">
+            <div class="text-danger mb-2">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 40px;"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Xác nhận Xóa?</h6>
+            <p class="text-secondary small mb-3" id="deleteConfirmMessage">Bạn có chắc chắn muốn xóa bản ghi này khỏi danh mục không?</p>
+            <div class="d-flex justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 btn-lift" id="confirmDeleteBtn">
+                    <i class="bi bi-trash-fill me-1"></i> Xóa ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

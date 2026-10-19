@@ -1,0 +1,132 @@
+@model KPI.Web.ViewModels.Report.LeaderboardViewModel
+@{
+    ViewData["Title"] = "Bảng Xếp Hạng Hiệu Suất Cán Bộ & Giảng Viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var f = Model.Filter;
+}
+
+<div class="content-body pb-5">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Report/Index?periodId=@f.PeriodId">Báo cáo</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Bảng Xếp Hạng</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-trophy-fill me-2 text-warning"></i>Bảng Xếp Hạng Hiệu Suất (Leaderboard)
+            </h1>
+            <p class="text-secondary small mb-0">
+                Thứ hạng điểm số tổng hợp KPI cán bộ, công chức, viên chức Học viện Hành chính Quốc gia
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="/Report/ExportExcel?periodId=@f.PeriodId" class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+            </a>
+            <a href="/Report/ExportPdf?periodId=@f.PeriodId" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF
+            </a>
+            <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>In A4
+            </button>
+            <a href="/Report/Index?periodId=@f.PeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Về Báo Cáo Tổng Hợp
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4 no-print">
+        <form method="get" action="/Report/Leaderboard" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="PeriodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == f.PeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="DepartmentIds" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả phòng ban --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(f.DepartmentIds != null && f.DepartmentIds.Contains(d.Id))">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Sắp xếp:</label>
+                <select name="SortBy" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="ScoreDesc" selected="@(f.SortBy == "ScoreDesc")">Điểm: Cao &rarr; Thấp</option>
+                    <option value="ScoreAsc" selected="@(f.SortBy == "ScoreAsc")">Điểm: Thấp &rarr; Cao</option>
+                    <option value="Department" selected="@(f.SortBy == "Department")">Theo Phòng ban</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <a href="/Report/Leaderboard?periodId=@f.PeriodId" class="btn btn-outline-secondary btn-sm rounded-pill w-100" title="Đặt lại">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- MAIN LEADERBOARD TABLE -->
+    <div class="card-enterprise p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light small text-uppercase">
+                    <tr>
+                        <th style="width: 70px;" class="text-center">Hạng</th>
+                        <th style="width: 70px;" class="text-center">Xu hướng</th>
+                        <th>Cán bộ / Giảng viên</th>
+                        <th>Phòng ban</th>
+                        <th>Chức danh</th>
+                        <th class="text-end" style="width: 100px;">Tự chấm</th>
+                        <th class="text-end" style="width: 100px;">Thẩm định</th>
+                        <th class="text-end" style="width: 120px;">Điểm KPI</th>
+                        <th class="text-center" style="width: 160px;">Xếp loại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="@(item.Rank <= 3 ? "table-warning-subtle" : "")">
+                            <td class="text-center font-mono fw-bold">
+                                @if (item.Rank == 1) { <span class="badge bg-warning text-dark px-2 py-1">🥇 1</span> }
+                                else if (item.Rank == 2) { <span class="badge bg-secondary text-white px-2 py-1">🥈 2</span> }
+                                else if (item.Rank == 3) { <span class="badge bg-danger text-white px-2 py-1">🥉 3</span> }
+                                else { <span>#@item.Rank</span> }
+                            </td>
+                            <td class="text-center">
+                                @if (item.TrendDirection == "Up") { <span class="text-success fw-bold">&uarr;</span> }
+                                else if (item.TrendDirection == "Down") { <span class="text-danger fw-bold">&darr;</span> }
+                                else { <span class="text-muted">&rarr;</span> }
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@item.FullName</div>
+                                <div class="small text-muted font-mono" style="font-size: 11px;">@item.StaffCode</div>
+                            </td>
+                            <td>@item.DepartmentName</td>
+                            <td class="text-secondary small">@item.PositionName</td>
+                            <td class="text-end font-mono text-muted">@item.SelfScore.ToString("0.0")</td>
+                            <td class="text-end font-mono text-muted">@item.ManagerScore.ToString("0.0")</td>
+                            <td class="text-end font-mono fw-bold fs-6 text-primary">@item.FinalScore.ToString("0.0")</td>
+                            <td class="text-center">
+                                <span class="badge @(item.FinalScore >= 90 ? "bg-warning text-dark" : (item.FinalScore >= 70 ? "bg-success" : (item.FinalScore >= 50 ? "bg-primary" : "bg-danger"))) rounded-pill px-2 py-1">
+                                    @item.Classification
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

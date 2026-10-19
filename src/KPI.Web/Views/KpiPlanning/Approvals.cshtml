@@ -1,0 +1,322 @@
+@model KPI.Web.ViewModels.Planning.ApprovalListViewModel
+@{
+    ViewData["Title"] = "Phê Duyệt Kế Hoạch KPI — Giám Đốc & Lãnh Đạo Đơn Vị";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Phê duyệt kế hoạch KPI</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-patch-check-fill me-2 text-primary"></i>Phê Duyệt & Khóa Kế Hoạch KPI (BR-03)
+            </h1>
+            <p class="text-secondary small mb-0">Thẩm định danh mục mục tiêu công việc, kiểm soát phân bổ trọng số và phê duyệt bản giao</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/KpiPlanning/Assign" class="btn btn-primary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Lập bản giao mới
+            </a>
+        </div>
+    </div>
+
+    <!-- METRIC CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-enterprise p-3 d-flex align-items-center gap-3">
+                <div class="avatar-circle-lg bg-primary-subtle text-primary fs-3">
+                    <i class="bi bi-folder2-open"></i>
+                </div>
+                <div>
+                    <div class="text-secondary small">Tổng số bản giao</div>
+                    <h3 class="fw-bold mb-0 font-mono text-dark">@Model.Assignments.Count</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-enterprise p-3 d-flex align-items-center gap-3">
+                <div class="avatar-circle-lg bg-warning-subtle text-warning fs-3">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <div class="text-secondary small">Chờ phê duyệt</div>
+                    <h3 class="fw-bold mb-0 font-mono text-warning">@Model.TotalPending</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-enterprise p-3 d-flex align-items-center gap-3">
+                <div class="avatar-circle-lg bg-success-subtle text-success fs-3">
+                    <i class="bi bi-lock-fill"></i>
+                </div>
+                <div>
+                    <div class="text-secondary small">Đã duyệt & Khóa (BR-03)</div>
+                    <h3 class="fw-bold mb-0 font-mono text-success">@Model.TotalApproved</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-enterprise p-3 d-flex align-items-center gap-3">
+                <div class="avatar-circle-lg bg-info-subtle text-info fs-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="text-secondary small">Tỷ lệ hoàn thành giao</div>
+                    <h3 class="fw-bold mb-0 font-mono text-info">
+                        @(Model.Assignments.Count > 0 ? (Model.TotalApproved * 100 / Model.Assignments.Count) : 0)%
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4">
+        <form method="get" action="/KpiPlanning/Approvals" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Kỳ đánh giá</label>
+                <select name="periodId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả kỳ --</option>
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name (@p.Year)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Phòng ban</label>
+                <select name="departmentId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả phòng ban --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.SelectedDepartmentId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Trạng thái</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="Pending_Approval" selected="@(Model.SelectedStatus == "Pending_Approval")">Chờ Lãnh đạo duyệt</option>
+                    <option value="Pending_Staff_Confirm" selected="@(Model.SelectedStatus == "Pending_Staff_Confirm")">Chờ nhân viên cam kết</option>
+                    <option value="Approved_Locked" selected="@(Model.SelectedStatus == "Approved_Locked")">Đã duyệt & Khóa</option>
+                    <option value="Draft" selected="@(Model.SelectedStatus == "Draft")">Bản nháp</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <div class="flex-grow-1">
+                    <label class="form-label small fw-semibold">Tìm kiếm</label>
+                    <input type="text" name="search" class="form-control form-control-sm" value="@Model.SearchKeyword" placeholder="Tên, mã cán bộ..." />
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 align-self-end">
+                    <i class="bi bi-filter"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ASSIGNMENTS DATA TABLE -->
+    <div class="card-enterprise">
+        <div class="table-responsive">
+            <table class="table-enterprise">
+                <thead>
+                    <tr>
+                        <th>Mã CB</th>
+                        <th>Họ và Tên Nhân Sự</th>
+                        <th>Phòng Ban</th>
+                        <th>Chức Danh</th>
+                        <th>Kỳ Đánh Giá</th>
+                        <th>Số Chỉ Tiêu</th>
+                        <th>Tổng Trọng Số</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Assignments.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 opacity-50 d-block mb-2"></i>
+                                Không tìm thấy bản giao KPI nào phù hợp với điều kiện lọc.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var a in Model.Assignments)
+                    {
+                        <tr>
+                            <td><span class="badge bg-dark font-mono">@a.StaffCode</span></td>
+                            <td class="fw-bold">@a.EmployeeName</td>
+                            <td>@a.DepartmentName</td>
+                            <td><span class="text-muted small">@a.PositionName</span></td>
+                            <td><span class="badge bg-light-subtle text-dark border">@a.PeriodName</span></td>
+                            <td>@a.ItemCount chỉ tiêu</td>
+                            <td>
+                                <span class="badge @(a.TotalWeight == 100m ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") font-mono fw-bold">
+                                    @a.TotalWeight%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @a.StatusBadgeClass font-mono">@a.StatusName</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="quickPreviewAssignment(@a.Id)">
+                                                <i class="bi bi-eye me-2 text-primary"></i>Xem nhanh & Biểu đồ
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/KpiPlanning/Confirm?id=@a.Id">
+                                                <i class="bi bi-file-earmark-text me-2 text-secondary"></i>Xem văn bản cam kết
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/KpiPlanning/Diff?id=@a.Id">
+                                                <i class="bi bi-clock-history me-2 text-info"></i>Lịch sử điều chỉnh (Diff)
+                                            </a>
+                                        </li>
+                                        @if (a.Status != KPI.Domain.Enums.AssignmentStatus.Approved_Locked)
+                                        {
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item" href="/KpiPlanning/Assign?id=@a.Id">
+                                                    <i class="bi bi-pencil-square me-2 text-warning"></i>Chỉnh sửa bản giao
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-success fw-bold" href="javascript:void(0)" onclick="openApproveModal(@a.Id, '@a.EmployeeName')">
+                                                    <i class="bi bi-check-circle-fill me-2"></i>Phê duyệt & Khóa (BR-03)
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="openRejectModal(@a.Id, '@a.EmployeeName')">
+                                                    <i class="bi bi-x-circle me-2"></i>Trả lại hồ sơ
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL QUICK PREVIEW SUMMARY + PIE CHART -->
+<div class="modal fade" id="modalQuickPreview" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="previewTitle">Thẩm Định Kế Hoạch Chỉ Tiêu KPI</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 mb-3">
+                    <div class="col-md-7">
+                        <div class="p-3 rounded bg-light-subtle border mb-3">
+                            <div class="small text-muted">Nhân sự nhận chỉ tiêu:</div>
+                            <h5 class="fw-bold mb-1" id="previewEmpName">--</h5>
+                            <div class="small text-secondary" id="previewEmpInfo">--</div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table-enterprise small">
+                                <thead>
+                                    <tr>
+                                        <th>Chỉ tiêu</th>
+                                        <th>Target</th>
+                                        <th>Trọng số</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewKpiTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="p-3 rounded border bg-surface text-center">
+                            <h6 class="fw-bold mb-2">Phân bổ Trọng số</h6>
+                            <div id="previewWeightChart" style="min-height: 250px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+                <div class="d-flex gap-2" id="previewActionButtons"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PHÊ DUYỆT (LOCK BR-03) -->
+<div class="modal fade" id="modalApproveConfirm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-success"><i class="bi bi-shield-check me-2"></i>Phê Duyệt Bản Giao KPI</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Bạn đang thực hiện phê duyệt bản giao chỉ tiêu cho cán bộ: <strong id="approveEmpName">--</strong>.</p>
+                <div class="alert alert-warning small">
+                    <i class="bi bi-lock-fill me-1"></i><strong>Quy tắc BR-03:</strong> Sau khi phê duyệt, bản giao sẽ được <strong>KHÓA TOÀN BỘ</strong>. Bất kỳ sự thay đổi chỉ tiêu hay trọng số nào sau đó bắt buộc phải thông qua quy trình Điều chỉnh KPI giữa kỳ.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ghi chú / Nhận xét của Lãnh đạo</label>
+                    <textarea class="form-control" id="approve-comments" rows="3" placeholder="Đồng ý thông qua kế hoạch KPI..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" onclick="executeApprove()">
+                    <i class="bi bi-check-lg me-1"></i>Xác Nhận Phê Duyệt & Khóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TRẢ LẠI HỒ SƠ -->
+<div class="modal fade" id="modalRejectConfirm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Trả Lại Kế Hoạch KPI</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Trả lại bản giao chỉ tiêu của cán bộ: <strong id="rejectEmpName">--</strong> cho Quản lý điều chỉnh.</p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Lý do trả lại <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="reject-reason" rows="4" placeholder="Nêu rõ chỉ tiêu hoặc trọng số cần điều chỉnh lại..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="executeReject()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Trả Lại Hồ Sơ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="~/js/kpi-planning.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,137 @@
+@{
+    ViewData["Title"] = "Cẩm Nang Hướng Dẫn Sử Dụng - Hệ Thống KPI";
+    ViewData["MetaDescription"] = "Tài liệu hướng dẫn chi tiết quy trình giao chỉ tiêu, tự chấm điểm, thẩm định, phê duyệt và tra cứu thu nhập P3.";
+}
+
+<article class="container py-4">
+    <header class="py-4 mb-4 border-bottom">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2 small">
+                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Hướng dẫn sử dụng</li>
+            </ol>
+        </nav>
+        <h1 class="h2 fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-book-half text-primary"></i>
+            Cẩm Nang Hướng Dẫn Sử Dụng & Vận Hành Hệ Thống KPI
+        </h1>
+        <p class="text-muted mb-0">Tài liệu chuẩn hóa dành cho Cán bộ, Giảng viên, Trưởng đơn vị và Hội đồng Đánh giá Học viện</p>
+    </header>
+
+    <div class="row g-4">
+        <!-- Sidebar Navigation -->
+        <aside class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 80px;">
+                <div class="card-header bg-transparent fw-bold py-3">
+                    <i class="bi bi-list-check me-2 text-primary"></i> Mục lục tài liệu
+                </div>
+                <div class="list-group list-group-flush small">
+                    <a href="#step-planning" class="list-group-item list-group-item-action">1. Giao chỉ tiêu KPI</a>
+                    <a href="#step-self" class="list-group-item list-group-item-action">2. Tự đánh giá & Minh chứng</a>
+                    <a href="#step-manager" class="list-group-item list-group-item-action">3. Thẩm định cấp Quản lý</a>
+                    <a href="#step-decree90" class="list-group-item list-group-item-action">4. Xếp loại Nghị định 90</a>
+                    <a href="#step-payroll" class="list-group-item list-group-item-action">5. Lương 3P & Chi tiền mặt</a>
+                    <a href="#step-shortcuts" class="list-group-item list-group-item-action">6. Phím tắt & Tra cứu nhanh</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="col-lg-9">
+            <!-- Step 1 -->
+            <section id="step-planning" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-primary mb-3">
+                        <span class="badge bg-primary me-2">Bước 1</span> Giao Chỉ Tiêu KPI & Phân Bổ Trọng Số (Kpi Planning)
+                    </h2>
+                    <p class="text-muted">
+                        Vào đầu mỗi kỳ đánh giá (Năm hoặc Quý), Trưởng đơn vị hoặc Ban Tổ chức cán bộ tiến hành giao chỉ tiêu cho từng cán bộ, giảng viên theo vị trí việc làm.
+                    </p>
+                    <div class="alert alert-info border-0 rounded-3 small">
+                        <strong><i class="bi bi-info-circle me-1"></i> Quy tắc nghiệp vụ BR-01:</strong>
+                        Tổng trọng số của các mục tiêu KPI trong một phiếu cam kết bắt buộc phải bằng chính xác <strong>100%</strong>. Không được lớn hơn hoặc nhỏ hơn 100%.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2 -->
+            <section id="step-self" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-success mb-3">
+                        <span class="badge bg-success me-2">Bước 2</span> Nhân Viên Tự Đánh Giá (Self-Assessment) & Đính Kèm Minh Chứng
+                    </h2>
+                    <p class="text-muted">
+                        Cán bộ, giảng viên truy cập mục <strong>"Phiếu Tự Đánh Giá"</strong>, nhập kết quả thực tế đạt được cho từng tiêu chí. Hệ thống tự động tính tỷ lệ hoàn thành (%) và điểm số tương ứng.
+                    </p>
+                    <div class="alert alert-warning border-0 rounded-3 small">
+                        <strong><i class="bi bi-shield-exclamation me-1"></i> Quy tắc nghiệp vụ BR-09 & BR-10:</strong>
+                        Nếu tỷ lệ hoàn thành vượt quá <strong>120%</strong>, hệ thống yêu cầu bắt buộc phải tải lên tệp minh chứng đính kèm (PDF, Word, Ảnh). Điểm tối đa được chặn trần (Cap) ở mức <strong>150%</strong>.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3 -->
+            <section id="step-manager" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-warning mb-3">
+                        <span class="badge bg-warning text-dark me-2">Bước 3</span> Lãnh Đạo Khoa / Phòng Thẩm Định Điểm Số (Manager Review)
+                    </h2>
+                    <p class="text-muted">
+                        Trưởng đơn vị xem xét điểm tự chấm của cán bộ, kiểm tra minh chứng, nhập điểm thẩm định và nhận xét. Nếu có chênh lệch $\ge 15$ điểm so với điểm tự chấm, hệ thống yêu cầu giải trình cụ thể.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 4 -->
+            <section id="step-decree90" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-danger mb-3">
+                        <span class="badge bg-danger me-2">Bước 4</span> Xếp Loại Cán Bộ Công Chức Theo Nghị Định 90 & 48 (BR-06)
+                    </h2>
+                    <p class="text-muted">
+                        Hội đồng thi đua khen thưởng và Ban Giám Đốc họp xét phân loại 4 mức: <em>Hoàn thành xuất sắc, Hoàn thành tốt, Hoàn thành, Không hoàn thành</em>.
+                    </p>
+                    <div class="alert alert-danger border-0 rounded-3 small">
+                        <strong><i class="bi bi-exclamation-triangle-fill me-1"></i> Quy tắc trần 20% (BR-06):</strong>
+                        Đồng hồ kiểm soát tỷ lệ (Gauge meter) hiển thị thời gian thực. Tỷ lệ cán bộ công chức được xếp loại Hoàn thành xuất sắc nhiệm vụ không được vượt quá <strong>20%</strong> tổng số cán bộ công chức cùng đơn vị được xếp loại Hoàn thành tốt nhiệm vụ.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 5 -->
+            <section id="step-payroll" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-success mb-3">
+                        <span class="badge bg-success me-2">Bước 5</span> Tính Thu Nhập Tăng Thêm (Lương P3) & Phiếu Chi Chuẩn Mẫu 02-TT
+                    </h2>
+                    <p class="text-muted">
+                        Phòng Kế hoạch Tài chính bấm <strong>"Tính lương toàn bộ"</strong> để sinh bảng lương theo công thức chuẩn:
+                        <code>Lương_P3 = Lương_Cơ_Bản × Hệ_Số_Lương × Hệ_Số_KPI</code>.
+                        Cho phép in Phiếu chi Mẫu 02-TT (kèm dịch số thành chữ tiếng Việt chuẩn xác) và Bảng kê ký nhận Mẫu 05a.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 6 -->
+            <section id="step-shortcuts" class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-dark mb-3">
+                        <span class="badge bg-dark me-2">Mẹo</span> Phím Tắt & Tiện Ích Thông Minh
+                    </h2>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <div class="border rounded-2 p-2 bg-light">
+                                <kbd>Ctrl</kbd> + <kbd>K</kbd>: Mở Command Palette tra cứu nhanh đa chiều
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-2 p-2 bg-light">
+                                <kbd>?</kbd> hoặc <kbd>Shift</kbd> + <kbd>/</kbd>: Bảng phím tắt hệ thống
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</article>

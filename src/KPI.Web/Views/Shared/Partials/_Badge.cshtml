@@ -1,0 +1,40 @@
+@* 
+    _Badge.cshtml
+    Tham số ViewData:
+    - Text: Nội dung hiển thị (string)
+    - Variant: success | warning | danger | info | primary | secondary (string)
+    - HasDot: Có chấm trạng thái hay không (bool)
+*@
+@{
+    var text = ViewData["Text"]?.ToString() ?? "Trạng thái";
+    var variant = ViewData["Variant"]?.ToString() ?? "primary";
+    var hasDot = (bool)(ViewData["HasDot"] ?? true);
+
+    var badgeClass = variant switch
+    {
+        "success" => "bg-success-subtle text-success border-success-subtle",
+        "warning" => "bg-warning-subtle text-warning border-warning-subtle",
+        "danger" => "bg-danger-subtle text-danger border-danger-subtle",
+        "info" => "bg-info-subtle text-info border-info-subtle",
+        "primary" => "bg-primary-subtle text-primary border-primary-subtle",
+        _ => "bg-secondary-subtle text-secondary border-secondary-subtle"
+    };
+
+    var dotColor = variant switch
+    {
+        "success" => "#10b981",
+        "warning" => "#f59e0b",
+        "danger" => "#ef4444",
+        "info" => "#06b6d4",
+        "primary" => "#2563eb",
+        _ => "#64748b"
+    };
+}
+
+<span class="badge @badgeClass border fw-semibold d-inline-flex align-items-center gap-1 px-2 py-1" style="font-size: 11.5px; border-radius: 6px;">
+    @if (hasDot)
+    {
+        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: @dotColor; display: inline-block;"></span>
+    }
+    @text
+</span>

@@ -1,0 +1,47 @@
+@* 
+    _Alert.cshtml
+    Tham số ViewData:
+    - Message: Thông điệp cảnh báo (string)
+    - Title: Tiêu đề cảnh báo (string)
+    - Variant: success | warning | danger | info (string)
+    - Dismissible: Cho phép đóng (bool)
+*@
+@{
+    var title = ViewData["Title"]?.ToString();
+    var msg = ViewData["Message"]?.ToString() ?? "";
+    var variant = ViewData["Variant"]?.ToString() ?? "info";
+    var dismissible = (bool)(ViewData["Dismissible"] ?? true);
+
+    var icon = variant switch
+    {
+        "success" => "bi-check-circle-fill",
+        "warning" => "bi-exclamation-triangle-fill",
+        "danger" => "bi-shield-x",
+        _ => "bi-info-circle-fill"
+    };
+
+    var alertClass = variant switch
+    {
+        "success" => "alert-success bg-success-subtle border-success-subtle text-success-emphasis",
+        "warning" => "alert-warning bg-warning-subtle border-warning-subtle text-warning-emphasis",
+        "danger" => "alert-danger bg-danger-subtle border-danger-subtle text-danger-emphasis",
+        _ => "alert-info bg-info-subtle border-info-subtle text-info-emphasis"
+    };
+}
+
+<div class="alert @alertClass @(dismissible ? "alert-dismissible fade show" : "") border rounded-3 p-3 shadow-sm" role="alert">
+    <div class="d-flex align-items-start gap-2">
+        <i class="bi @icon fs-5 flex-shrink-0 mt-1"></i>
+        <div class="flex-grow-1">
+            @if (!string.IsNullOrEmpty(title))
+            {
+                <h6 class="alert-heading fw-bold mb-1">@title</h6>
+            }
+            <div class="small">@msg</div>
+        </div>
+        @if (dismissible)
+        {
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        }
+    </div>
+</div>

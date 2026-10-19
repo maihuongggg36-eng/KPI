@@ -1,0 +1,182 @@
+@model List<KPI.Application.DTOs.RolePermissionMatrixDto>
+@{
+    ViewData["Title"] = "Phân quyền Hệ thống";
+    var allPermissions = ViewBag.AllPermissions as List<(string Code, string Module, string Name, string Description)> ?? new();
+    var groupedPermissions = allPermissions.GroupBy(p => p.Module).ToList();
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item text-muted">Quản trị Hệ thống (ADMIN)</li>
+                    <li class="breadcrumb-item active fw-bold text-primary">Phân quyền Hệ thống</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Ma Trận Phân Quyền Vai Trò & Chức Năng</h2>
+            <p class="text-muted small mb-0">CHỈ ADMIN có quyền thiết lập và phân bổ quyền hạn cho các vai trò: Giám đốc, Trưởng Khoa, Kế toán, Nhân sự, Cán bộ.</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Tabs by Role -->
+    <ul class="nav nav-pills mb-4 bg-white p-2 rounded-3 shadow-sm border" id="roleTabs" role="tablist">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            var role = Model[i];
+            var isFirst = i == 0;
+            var tabBadge = role.RoleCode switch
+            {
+                "ADMIN" => "bg-danger",
+                "DIRECTOR" => "bg-primary",
+                "MANAGER" => "bg-warning text-dark",
+                "HR_ADMIN" => "bg-info text-dark",
+                "ACCOUNTANT" => "bg-success",
+                _ => "bg-secondary"
+            };
+
+            <li class="nav-item me-2" role="presentation">
+                <button class="nav-link @(isFirst ? "active fw-bold" : "text-dark") rounded-2"
+                        id="tab-btn-@role.RoleId"
+                        data-bs-toggle="pill"
+                        data-bs-target="#tab-content-@role.RoleId"
+                        type="button" role="tab">
+                    <span class="badge @tabBadge me-2">@role.RoleCode</span>
+                    @role.RoleName
+                    <span class="badge bg-light text-dark ms-2 border">@role.AssignedPermissionCodes.Count quyền</span>
+                </button>
+            </li>
+        }
+    </ul>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="roleTabsContent">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            var role = Model[i];
+            var isFirst = i == 0;
+            var isAdminRole = role.RoleCode == "ADMIN";
+
+            <div class="tab-pane fade @(isFirst ? "show active" : "")" id="tab-content-@role.RoleId" role="tabpanel">
+                <form method="post" asp-action="SaveRolePermissions">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="roleId" value="@role.RoleId" />
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0 fw-bold text-dark">
+                                    <i class="bi bi-person-fill-gear text-primary me-2"></i>Quyền hạn của Vai trò: @role.RoleName (@role.RoleCode)
+                                </h5>
+                                <small class="text-muted">@role.Description</small>
+                            </div>
+                            <div>
+                                @if (isAdminRole)
+                                {
+                                    <span class="badge bg-danger px-3 py-2 fs-6">ADMIN TOÀN QUYỀN HỆ THỐNG</span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleAllCheckboxes(@role.RoleId, true)">
+                                        <i class="bi bi-check-all"></i> Chọn tất cả
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleAllCheckboxes(@role.RoleId, false)">
+                                        <i class="bi bi-x"></i> Bỏ chọn
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+                                        <i class="bi bi-save me-1"></i> Lưu Thay Đổi Quyền
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            @if (isAdminRole)
+                            {
+                                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                    <i class="bi bi-shield-exclamation fs-3 me-3 text-warning"></i>
+                                    <div>
+                                        <strong>Đặc quyền ADMIN:</strong> Vai trò Quản trị viên (ADMIN) tự động nắm giữ 100% tất cả các quyền trong toàn hệ thống. ADMIN là người phân quyền cho các vai trò khác (Giám đốc, Trưởng khoa, Kế toán, Nhân sự, Giảng viên).
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="row g-4">
+                                @foreach (var group in groupedPermissions)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="border rounded-3 p-3 bg-light bg-opacity-50 h-100">
+                                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                                <h6 class="fw-bold text-primary mb-0">
+                                                    <i class="bi bi-folder-fill me-2 text-warning"></i>@group.Key
+                                                </h6>
+                                                <span class="badge bg-white text-muted border">@group.Count() quyền</span>
+                                            </div>
+                                            <div class="d-flex flex-column gap-2">
+                                                @foreach (var perm in group)
+                                                {
+                                                    var isChecked = role.AssignedPermissionCodes.Contains(perm.Code) || isAdminRole;
+                                                    <div class="form-check p-2 rounded bg-white border">
+                                                        <input class="form-check-input role-perm-check-@role.RoleId ms-1 me-2"
+                                                               type="checkbox"
+                                                               name="permissionCodes"
+                                                               value="@perm.Code"
+                                                               id="perm_@(role.RoleId)_@(perm.Code.Replace(".", "_"))"
+                                                               @(isChecked ? "checked" : "")
+                                                               @(isAdminRole ? "disabled" : "") />
+                                                        <label class="form-check-label w-100" for="perm_@(role.RoleId)_@(perm.Code.Replace(".", "_"))">
+                                                            <div class="fw-bold text-dark small">@perm.Name</div>
+                                                            <div class="text-muted" style="font-size: 0.8rem;">@perm.Description</div>
+                                                            <code class="text-primary" style="font-size: 0.75rem;">@perm.Code</code>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (!isAdminRole)
+                        {
+                            <div class="card-footer bg-light py-3 text-end">
+                                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                    <i class="bi bi-save me-1"></i> Lưu Thay Đổi Quyền Cho Vai Trò @role.RoleName
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </form>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleAllCheckboxes(roleId, state) {
+            var checkboxes = document.querySelectorAll('.role-perm-check-' + roleId);
+            checkboxes.forEach(function (cb) {
+                if (!cb.disabled) {
+                    cb.checked = state;
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,424 @@
+@using System.Security.Claims
+@inject KPI.Application.Services.IMenuService MenuService
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "Hệ thống Quản lý và Đánh giá KPI") - Học viện Hành chính và Quản trị công</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@(ViewData["MetaDescription"] ?? "Hệ thống quản lý, giao chỉ tiêu, đánh giá KPI và xếp loại cán bộ công chức theo Nghị định 90 của Học viện Hành chính và Quản trị công.")" />
+    <meta name="keywords" content="@(ViewData["MetaKeywords"] ?? "KPI, đánh giá hiệu suất, cán bộ công chức, Nghị định 90, lương 3P, Học viện Hành chính và Quản trị công, NAPA")" />
+    <meta name="author" content="Học viện Hành chính và Quản trị công" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Học viện Hành chính và Quản trị công" />
+    <meta property="og:url" content="@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+    <meta property="og:title" content="@(ViewData["Title"] ?? "Hệ thống KPI") - Học viện Hành chính và Quản trị công" />
+    <meta property="og:description" content="@(ViewData["MetaDescription"] ?? "Hệ thống quản trị hiệu quả công việc và xếp loại cán bộ công chức.")" />
+    <meta property="og:image" content="@($"{Context.Request.Scheme}://{Context.Request.Host}/images/og-image.png")" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@(ViewData["Title"] ?? "Hệ thống KPI") - Học viện Hành chính và Quản trị công" />
+    <meta name="twitter:description" content="@(ViewData["MetaDescription"] ?? "Hệ thống quản trị hiệu quả công việc và xếp loại cán bộ công chức.")" />
+    <meta name="twitter:image" content="@($"{Context.Request.Scheme}://{Context.Request.Host}/images/og-image.png")" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@graph": [
+        {
+          "@@type": "EducationalOrganization",
+          "name": "Học viện Hành chính và Quản trị công",
+          "url": "@($"{Context.Request.Scheme}://{Context.Request.Host}")",
+          "description": "Trung tâm đào tạo, bồi dưỡng cán bộ, công chức, viên chức hàng đầu quốc gia."
+        },
+        {
+          "@@type": "WebApplication",
+          "name": "Hệ thống Quản lý & Đánh giá KPI Cán bộ, Giảng viên",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "All modern web browsers"
+        }
+      ]
+    }
+    </script>
+
+    <!-- CSS Framework & Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <!-- Enterprise Design System CSS -->
+    <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- 1. Scroll Progress Bar ở đầu trang -->
+    <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+
+    <div class="app-container">
+        <!-- 2. Left Collapsible Sidebar -->
+        <aside class="app-sidebar" id="appSidebar">
+            <!-- Sidebar Header Brand -->
+            <div class="sidebar-header">
+                <a asp-controller="Home" asp-action="Index" class="sidebar-brand">
+                    <div class="brand-icon">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-title">Học viện Hành chính</span>
+                        <span class="brand-subtitle">Hệ thống KPI & NĐ 90</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Sidebar Navigation Links Rendered Dynamically from Database -->
+            <nav class="sidebar-nav">
+                @{
+                    var dynamicMenus = await MenuService.GetUserNavigationMenuAsync(User);
+                    var sections = dynamicMenus.GroupBy(m => string.IsNullOrWhiteSpace(m.SectionTitle) ? "Tổng quan" : m.SectionTitle);
+                    var currentPath = Context.Request.Path.Value ?? "";
+                }
+
+                @foreach (var sec in sections)
+                {
+                    <div class="nav-section-title">@sec.Key</div>
+                    @foreach (var item in sec)
+                    {
+                        var isActive = !string.IsNullOrEmpty(item.Url) && currentPath.Equals(item.Url, StringComparison.OrdinalIgnoreCase);
+                        var rawIcon = string.IsNullOrWhiteSpace(item.Icon) ? "bi-circle" : item.Icon.Trim();
+                        var finalIcon = rawIcon.StartsWith("bi-") ? rawIcon : (rawIcon.StartsWith("bi ") ? rawIcon.Substring(3) : $"bi-{rawIcon}");
+                        <a href="@(item.Url ?? "#")" class="nav-link-item @(isActive ? "active" : "")" title="@item.Title">
+                            <i class="bi @finalIcon"></i>
+                            <span class="nav-text">@item.Title</span>
+                        </a>
+                    }
+                }
+
+                <!-- Phân hệ Vận hành & Trợ giúp -->
+                <div class="nav-section-title">Vận hành & Trợ giúp</div>
+                <a asp-controller="Health" asp-action="Index" class="nav-link-item" title="Giám Sát Sức Khỏe & Vận Hành Hệ Thống">
+                    <i class="bi bi-heart-pulse-fill text-danger"></i>
+                    <span class="nav-text">Sức Khỏe Hệ Thống</span>
+                </a>
+                <a href="/swagger" target="_blank" class="nav-link-item" title="Tài liệu API Chuẩn OpenAPI / Swagger">
+                    <i class="bi bi-braces-asterisk text-info"></i>
+                    <span class="nav-text">API Docs (Swagger)</span>
+                </a>
+                <a asp-controller="Home" asp-action="UserGuide" class="nav-link-item" title="Cẩm Nang Hướng Dẫn Quy Trình KPI">
+                    <i class="bi bi-book-half text-warning"></i>
+                    <span class="nav-text">Hướng Dẫn Sử Dụng</span>
+                </a>
+                <a asp-controller="Home" asp-action="About" class="nav-link-item" title="Giới Thiệu Học Viện & Hệ Thống">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span class="nav-text">Giới Thiệu NAPA</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar User Profile Footer -->
+            <div class="sidebar-user">
+                @{
+                    var userFullName = User.FindFirstValue(ClaimTypes.GivenName) ?? (User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Khách thăm");
+                    var userRole = User.FindFirstValue(ClaimTypes.Role) ?? "GUEST";
+                    var userAvatarInitial = !string.IsNullOrEmpty(userFullName) ? userFullName.Substring(0, 1).ToUpper() : "U";
+
+                    var roleBadgeClass = userRole switch
+                    {
+                        "DIRECTOR" => "bg-danger text-white",
+                        "MANAGER" => "bg-primary text-white",
+                        "OFFICER" => "bg-success text-white",
+                        "HR_ADMIN" => "bg-info text-dark",
+                        "ACCOUNTANT" => "bg-warning text-dark",
+                        "ADMIN" => "bg-secondary text-white",
+                        _ => "bg-secondary text-white"
+                    };
+                }
+                <div class="user-avatar">
+                    @userAvatarInitial
+                </div>
+                <div class="user-info-text">
+                    <div class="user-name">@userFullName</div>
+                    <span class="user-role-badge @roleBadgeClass">@userRole</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 3. Main Area Wrapper -->
+        <div class="app-main" id="appMain">
+            <!-- 3.1 Sticky Top Header -->
+            <header class="app-header">
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Mobile Hamburger Button -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-md-none border-0" id="mobileMenuBtn" aria-label="Menu">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+
+                    <!-- Desktop Collapse/Expand Sidebar Toggle -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-none d-md-flex align-items-center justify-content-center rounded-3 p-2" id="sidebarToggleBtn" title="Thu gọn / Mở rộng Sidebar" style="width: 36px; height: 36px;">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+
+                    <!-- Breadcrumb in Header -->
+                    <div class="d-none d-sm-flex align-items-center">
+                        <partial name="Partials/_Breadcrumb" />
+                    </div>
+
+                    <!-- Evaluation Period Badge -->
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-none d-lg-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill small">
+                        <i class="bi bi-calendar-event"></i> Kỳ đánh giá 2026: <strong class="ms-1">Đang mở</strong>
+                    </span>
+
+                    @if (User.IsInRole("ADMIN"))
+                    {
+                        <a asp-controller="Admin" asp-action="Menus" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 shadow-xs fw-semibold" style="font-size: 12.5px;" title="ADMIN: Quản lý Thêm / Sửa / Xóa Menu Sidebar">
+                            <i class="bi bi-menu-button-wide-fill"></i>
+                            <span>Quản lý Menu</span>
+                        </a>
+                    }
+                </div>
+
+                <div class="d-flex align-items-center gap-2 gap-sm-3">
+                    <!-- Command Palette Search Button (Ctrl+K) -->
+                    <button type="button" class="header-search-btn" id="openCommandPaletteBtn" title="Mở tìm kiếm nhanh (Ctrl+K)">
+                        <i class="bi bi-search"></i>
+                        <span class="d-none d-md-inline">Tìm kiếm nhanh...</span>
+                        <span class="kbd-shortcut d-none d-md-inline">Ctrl K</span>
+                    </button>
+
+                    <!-- Notification Bell Dropdown (SignalR Real-time) -->
+                    <div class="dropdown">
+                        <button type="button" class="notif-bell-btn position-relative" id="notifBellDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo hệ thống thời gian thực" aria-label="Xem thông báo">
+                            <i class="bi bi-bell"></i>
+                            <span class="notif-badge-dot" id="notifBadgeDot" style="display: none;"></span>
+                            <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle font-mono shadow-sm" id="notifBadgeCount" style="display: none; font-size: 10px; padding: 3px 6px;">0</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-xl border-0 rounded-4 p-0 mt-2" style="width: 360px;" aria-labelledby="notifBellDropdown">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <h6 class="fw-bold mb-0 small text-dark"><i class="bi bi-bell-fill me-1 text-primary"></i>Thông Báo</h6>
+                                    <span class="badge bg-primary-subtle text-primary small font-mono" id="notifUnreadHeaderLabel">0 chưa đọc</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-link btn-xs p-0 text-secondary" id="btnToggleNotifSound" title="Bật/Tắt âm thanh thông báo">
+                                        <i class="bi bi-volume-up-fill text-primary"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-link btn-xs text-primary text-decoration-none p-0 fw-semibold" onclick="window.markAllNotificationsRead()" title="Đánh dấu tất cả thông báo là đã đọc">
+                                        Đã đọc hết
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Dynamic Notifications List Container -->
+                            <div class="p-0" id="notifDropdownList" style="max-height: 380px; overflow-y: auto;">
+                                <div class="p-4 text-center text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                    <span class="small">Đang đồng bộ thông báo...</span>
+                                </div>
+                            </div>
+                            <div class="p-2 border-top text-center bg-light rounded-bottom-4 d-flex justify-content-between px-3">
+                                <a href="/Profile#tab-settings" class="small text-decoration-none text-muted">
+                                    <i class="bi bi-sliders me-1"></i>Cài đặt thông báo
+                                </a>
+                                <a href="/Notification/EmailLogs" class="small text-decoration-none fw-semibold text-primary">
+                                    Xem nhật ký email &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Switcher Button (Light / Dark / System) -->
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Chuyển đổi Sáng / Tối / Tự động" aria-label="Chuyển chế độ giao diện">
+                        <i class="bi bi-sun-fill text-warning" id="themeToggleIcon"></i>
+                    </button>
+
+                    <!-- User Profile Dropdown -->
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-sm d-flex align-items-center gap-2 p-1 border rounded-pill bg-surface-hover" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu tài khoản">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 13px;">
+                                    @userAvatarInitial
+                                </div>
+                                <span class="d-none d-md-inline fw-semibold small me-1">@userFullName</span>
+                                <i class="bi bi-chevron-down small text-muted me-1"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-xl border-0 rounded-4 mt-2 p-2" style="min-width: 230px;" aria-labelledby="userMenuDropdown">
+                                <li class="px-3 py-2 border-bottom mb-2">
+                                    <div class="fw-bold small text-dark">@userFullName</div>
+                                    <div class="text-muted small">@User.Identity.Name</div>
+                                    <span class="badge @roleBadgeClass mt-1" style="font-size: 10px;">@userRole</span>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item rounded-3 py-2 small" href="/Profile">
+                                        <i class="bi bi-person-gear me-2 text-primary"></i>Hồ sơ & Cài đặt cá nhân
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item rounded-3 py-2 small" href="javascript:void(0)" id="btnOpenShortcutsModal">
+                                        <i class="bi bi-keyboard me-2 text-warning"></i>Phím tắt tiện ích (?)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item rounded-3 py-2 small" href="javascript:void(0)" onclick="window.startOnboardingTour()">
+                                        <i class="bi bi-compass me-2 text-info"></i>Hướng dẫn sử dụng (Tour)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item rounded-3 py-2 small" asp-controller="Auth" asp-action="Login">
+                                        <i class="bi bi-arrow-repeat me-2 text-success"></i>Chuyển đổi vai trò 1-Click
+                                    </a>
+                                </li>
+                                @if (User.IsInRole("ADMIN") || User.IsInRole("DIRECTOR"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item rounded-3 py-2 small" href="/Notification/EmailLogs">
+                                            <i class="bi bi-envelope-paper-heart me-2 text-primary"></i>Nhật ký Email (Queue)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item rounded-3 py-2 small" asp-controller="Audit" asp-action="Index">
+                                            <i class="bi bi-shield-lock me-2 text-warning"></i>Nhật ký Hệ thống (Audit)
+                                        </a>
+                                    </li>
+                                }
+                                <li><hr class="dropdown-divider my-2"></li>
+                                <li>
+                                    <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline w-100">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item rounded-3 py-2 small text-danger">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất an toàn
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a asp-controller="Auth" asp-action="Login" class="btn btn-primary btn-sm px-3 rounded-pill fw-semibold btn-lift">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                        </a>
+                    }
+                </div>
+            </header>
+
+            <!-- 3.2 Main Content View Area -->
+            <main class="app-content" role="main">
+                <!-- Toast Flash Alerts -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <partial name="Partials/_Alert" view-data='@new ViewDataDictionary(ViewData) { ["Variant"] = "success", ["Title"] = "Thành công", ["Message"] = TempData["SuccessMessage"]?.ToString() }' />
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <partial name="Partials/_Alert" view-data='@new ViewDataDictionary(ViewData) { ["Variant"] = "danger", ["Title"] = "Lỗi thao tác", ["Message"] = TempData["ErrorMessage"]?.ToString() }' />
+                }
+                @if (TempData["InfoMessage"] != null)
+                {
+                    <partial name="Partials/_Alert" view-data='@new ViewDataDictionary(ViewData) { ["Variant"] = "info", ["Title"] = "Thông báo", ["Message"] = TempData["InfoMessage"]?.ToString() }' />
+                }
+
+                @RenderBody()
+            </main>
+
+            <!-- 3.3 App Footer -->
+            <footer class="app-footer">
+                <div>
+                    &copy; 2026 <strong>Học viện Hành chính và Quản trị công</strong> • Phiên bản 3.0 Enterprise
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                    <span class="badge bg-light text-dark border">Nghị định 90/2020/NĐ-CP</span>
+                    <span class="badge bg-light text-dark border">Nghị định 48/2023/NĐ-CP</span>
+                    <span class="badge bg-success-subtle text-success">Clean Architecture .NET 8</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- 4. Global Command Palette Modal (Ctrl+K) -->
+    <div class="modal fade" id="commandPaletteModal" tabindex="-1" aria-labelledby="commandPaletteModalLabel" aria-hidden="true" style="backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.65);">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 680px;">
+            <div class="modal-content rounded-4 shadow-2xl border-0 overflow-hidden" style="background: rgba(255, 255, 255, 0.98);">
+                <div class="p-3 border-bottom d-flex align-items-center gap-3 bg-light">
+                    <i class="bi bi-search fs-5 text-primary"></i>
+                    <input type="text" class="form-control border-0 bg-transparent p-0 fs-6 shadow-none" id="commandPaletteInput" placeholder="Tìm kiếm nhanh cán bộ, chỉ tiêu KPI, danh mục, trang chức năng..." autocomplete="off" aria-label="Tìm kiếm toàn hệ thống" />
+                    <span class="badge bg-secondary-subtle text-secondary font-mono small px-2 py-1">ESC để đóng</span>
+                </div>
+                <div class="p-2" id="commandPaletteResults" style="max-height: 420px; min-height: 220px; overflow-y: auto;">
+                    <!-- Render dynamic search results from command-palette.js -->
+                </div>
+                <div class="p-2 border-top bg-light d-flex justify-content-between align-items-center px-3 small text-muted">
+                    <div class="d-flex align-items-center gap-3">
+                        <span><kbd class="bg-dark text-white px-1">↑</kbd> <kbd class="bg-dark text-white px-1">↓</kbd> Di chuyển</span>
+                        <span><kbd class="bg-dark text-white px-1">Enter</kbd> Chọn</span>
+                        <span><kbd class="bg-dark text-white px-1">Esc</kbd> Đóng</span>
+                    </div>
+                    <div>
+                        <span class="text-primary fw-semibold"><i class="bi bi-stars me-1"></i>Học viện NAPA Search</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Keyboard Shortcuts Cheat Sheet Modal (?) -->
+    <div class="modal fade" id="keyboardShortcutsModal" tabindex="-1" aria-labelledby="keyboardShortcutsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-xl border-0">
+                <div class="modal-header border-bottom bg-light rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="keyboardShortcutsModalLabel">
+                        <i class="bi bi-keyboard-fill me-2 text-warning"></i>Bảng Phím Tắt Tiện Ích (Shortcuts)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-dark fw-semibold">Tìm kiếm toàn hệ thống (Command Palette)</span>
+                            <kbd class="bg-dark text-white px-2 py-1 rounded">Ctrl + K</kbd>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-dark fw-semibold">Mở Bảng tra phím tắt này</span>
+                            <kbd class="bg-dark text-white px-2 py-1 rounded">?</kbd>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-dark fw-semibold">Đóng popup, modal hoặc dropdown</span>
+                            <kbd class="bg-dark text-white px-2 py-1 rounded">Esc</kbd>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-dark fw-semibold">Di chuyển dòng trong danh sách tìm kiếm</span>
+                            <span><kbd class="bg-dark text-white px-2 py-1 rounded">↑</kbd> <kbd class="bg-dark text-white px-2 py-1 rounded">↓</kbd></span>
+                        </div>
+                    </div>
+                    <hr class="my-3 opacity-25" />
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Chưa quen sử dụng hệ thống?</span>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="bootstrap.Modal.getInstance(document.getElementById('keyboardShortcutsModal')).hide(); window.startOnboardingTour();">
+                            <i class="bi bi-compass me-1"></i>Bắt đầu Hướng dẫn (Tour)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Toast Notification Container (Fixed Position) -->
+    <div id="kpiToastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1095;">
+        <!-- Realtime toasts will be injected dynamically here -->
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="~/js/theme-manager.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/notification-realtime.js" asp-append-version="true"></script>
+    <script src="~/js/command-palette.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

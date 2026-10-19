@@ -1,0 +1,295 @@
+@model KPI.Web.ViewModels.Planning.MyKpiViewModel
+@{
+    ViewData["Title"] = "KPI Của Tôi — Kế hoạch & Mục tiêu Cá nhân";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var hasAssignment = Model.Assignment != null;
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">KPI Của Tôi</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-person-workspace me-2 text-primary"></i>KPI Của Tôi (My Performance Plan)
+            </h1>
+            <p class="text-secondary small mb-0">Theo dõi các chỉ tiêu mục tiêu công việc, tỷ lệ trọng số và tiến độ thực hiện</p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <!-- PERIOD SELECTOR -->
+            <form method="get" action="/KpiPlanning/MyKpi" class="d-flex align-items-center gap-2">
+                <select name="periodId" class="form-select form-select-sm rounded-pill font-mono" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name (@p.Year)</option>
+                    }
+                </select>
+                <input type="hidden" name="viewMode" value="@Model.ViewMode" />
+            </form>
+
+            <!-- VIEW MODE TOGGLER (CARDS VS TABLE) -->
+            <div class="btn-group rounded-pill p-1 bg-light-subtle border" role="group">
+                <button type="button" class="btn btn-sm rounded-pill @(Model.ViewMode == "cards" ? "btn-primary" : "btn-light text-muted")" onclick="switchMyKpiView('cards')">
+                    <i class="bi bi-grid-fill me-1"></i>Thẻ
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill @(Model.ViewMode == "table" ? "btn-primary" : "btn-light text-muted")" onclick="switchMyKpiView('table')">
+                    <i class="bi bi-table me-1"></i>Bảng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (!hasAssignment)
+    {
+        <!-- EMPTY STATE ILLUSTRATION -->
+        <div class="card-enterprise p-5 text-center my-4">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-clipboard2-x text-muted display-3 opacity-50"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-2">Chưa có bản giao KPI cho kỳ đánh giá này</h4>
+            <p class="text-secondary mb-4 mx-auto" style="max-width: 500px;">
+                Quản lý phòng ban chưa thiết lập hoặc gửi bản giao chỉ tiêu cho bạn trong kỳ được chọn. Vui lòng liên hệ lãnh đạo trực tiếp hoặc chọn kỳ đánh giá khác.
+            </p>
+            <div>
+                <a href="/Dashboard" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại Trang chủ
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        var assign = Model.Assignment!;
+
+        <!-- ASSIGNMENT SUMMARY BANNER -->
+        <div class="card-enterprise mb-4 overflow-hidden">
+            <div class="p-4 bg-gradient-navy text-white">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge @assign.StatusBadgeClass font-mono px-3 py-1 fs-6">@assign.StatusName</span>
+                            <span class="badge bg-dark-subtle text-white font-mono small">Phiên bản: v@assign.VersionNumber</span>
+                            @if (assign.CommittedAt.HasValue)
+                            {
+                                <span class="badge bg-success-subtle text-success small font-mono">
+                                    <i class="bi bi-patch-check-fill me-1"></i>Đã ký cam kết: @assign.CommittedAtStr
+                                </span>
+                            }
+                        </div>
+                        <h3 class="fw-bold mb-1">@assign.Title</h3>
+                        <div class="text-white-50 small">
+                            <i class="bi bi-calendar-event me-1"></i>@assign.PeriodName • 
+                            <i class="bi bi-person me-1"></i>Người duyệt: @assign.ApproverName • 
+                            <i class="bi bi-clock me-1"></i>Khởi tạo: @assign.CreatedAtStr
+                        </div>
+                    </div>
+
+                    <!-- NÚT CAM KẾT / XEM CHI TIẾT -->
+                    <div class="d-flex align-items-center gap-2">
+                        @if (assign.Status == KPI.Domain.Enums.AssignmentStatus.Pending_Staff_Confirm)
+                        {
+                            <a href="/KpiPlanning/Confirm?id=@assign.Id" class="btn btn-warning btn-lg rounded-pill px-4 text-dark fw-bold animate-pulse">
+                                <i class="bi bi-pen me-2"></i>Ký Cam Kết Điện Tử Ngay
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="/KpiPlanning/Confirm?id=@assign.Id" class="btn btn-outline-light rounded-pill px-3">
+                                <i class="bi bi-file-earmark-text me-1"></i>Xem văn bản cam kết
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS SUB-BAR -->
+            <div class="p-3 bg-surface border-top">
+                <div class="row g-3 text-center">
+                    <div class="col-6 col-md-3 border-end">
+                        <div class="text-secondary small">Tổng số chỉ tiêu</div>
+                        <div class="fs-4 fw-bold text-dark font-mono">@assign.Details.Count</div>
+                    </div>
+                    <div class="col-6 col-md-3 border-end">
+                        <div class="text-secondary small">Tổng trọng số (BR-01)</div>
+                        <div class="fs-4 fw-bold text-success font-mono">@assign.TotalWeight%</div>
+                    </div>
+                    <div class="col-6 col-md-3 border-end">
+                        <div class="text-secondary small">Hạn tự đánh giá</div>
+                        <div class="fs-4 fw-bold text-primary font-mono">15/04/2026</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-secondary small">Trạng thái khóa (BR-03)</div>
+                        <div class="fs-5 fw-bold @(assign.Status == KPI.Domain.Enums.AssignmentStatus.Approved_Locked ? "text-danger" : "text-muted")">
+                            <i class="bi @(assign.Status == KPI.Domain.Enums.AssignmentStatus.Approved_Locked ? "bi-lock-fill" : "bi-unlock") me-1"></i>
+                            @(assign.Status == KPI.Domain.Enums.AssignmentStatus.Approved_Locked ? "Đã khóa chính thức" : "Chưa khóa")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. VIEW MODE: CARDS VIEW -->
+        <div class="@(Model.ViewMode == "cards" ? "" : "d-none")" id="mykpi-view-cards">
+            <div class="row g-4">
+                @foreach (var (item, index) in assign.Details.Select((v, i) => (v, i + 1)))
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card-enterprise h-100 p-4 d-flex flex-column justify-content-between position-relative overflow-hidden card-hover">
+                            <!-- ACCENT TOP STRIP -->
+                            <div class="position-absolute top-0 start-0 w-100 bg-primary" style="height: 4px;"></div>
+
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-dark font-mono">#@index — @item.KpiCode</span>
+                                    <span class="badge bg-primary-subtle text-primary font-mono fw-bold">@item.Weight% Trọng số</span>
+                                </div>
+                                <h6 class="fw-bold mb-2 text-dark">@item.KpiName</h6>
+                                <div class="text-muted small mb-3">
+                                    <i class="bi bi-tag me-1"></i>@item.Perspective • <i class="bi bi-calculator me-1"></i>@item.ScoringFormulaName
+                                </div>
+
+                                <div class="p-3 rounded-2 bg-light-subtle border mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary small">Mục tiêu yêu cầu (Target):</span>
+                                        <span class="fw-bold font-mono text-dark fs-6">@item.TargetValue @item.Unit</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                                        <span>Trần tối đa (MaxCap):</span>
+                                        <span class="font-mono">@item.MaxCap%</span>
+                                    </div>
+                                </div>
+
+                                <!-- ANIMATED PROGRESS BAR -->
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                                        <span class="text-secondary">Tiến độ thực hiện:</span>
+                                        <span class="fw-bold text-primary font-mono">0.0%</span>
+                                    </div>
+                                    <div class="progress progress-enterprise" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge bg-secondary-subtle text-secondary small">
+                                    <i class="bi bi-paperclip me-1"></i>@item.EvidenceCount minh chứng
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openKpiDetailModal(@item.Id, '@item.KpiName', '@item.TargetValue', '@item.Unit')">
+                                    <i class="bi bi-eye me-1"></i>Chi tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- 2. VIEW MODE: TABLE VIEW -->
+        <div class="@(Model.ViewMode == "table" ? "" : "d-none")" id="mykpi-view-table">
+            <div class="card-enterprise">
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã KPI</th>
+                                <th>Tên Chỉ Tiêu</th>
+                                <th>Viễn Cảnh</th>
+                                <th>Mục Tiêu (Target)</th>
+                                <th>Trọng Số (BR-02)</th>
+                                <th>Công Thức</th>
+                                <th>MaxCap</th>
+                                <th class="text-end">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (item, index) in assign.Details.Select((v, i) => (v, i + 1)))
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td><span class="badge bg-dark font-mono">@item.KpiCode</span></td>
+                                    <td class="fw-bold">@item.KpiName</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">@item.Perspective</span></td>
+                                    <td class="font-mono fw-bold">@item.TargetValue @item.Unit</td>
+                                    <td><span class="badge bg-primary-subtle text-primary font-mono fw-bold">@item.Weight%</span></td>
+                                    <td>@item.ScoringFormulaName</td>
+                                    <td class="font-mono text-muted">@item.MaxCap%</td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openKpiDetailModal(@item.Id, '@item.KpiName', '@item.TargetValue', '@item.Unit')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- MODAL CHI TIẾT CHỈ TIÊU -->
+<div class="modal fade" id="modalKpiItemDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="detailModalTitle">Chi Tiết Chỉ Tiêu KPI</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <div class="text-secondary small">Tên chỉ tiêu</div>
+                    <h6 class="fw-bold" id="detailKpiName">--</h6>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light-subtle border">
+                            <div class="small text-muted">Mục tiêu</div>
+                            <div class="fw-bold font-mono" id="detailKpiTarget">--</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light-subtle border">
+                            <div class="small text-muted">Đơn vị đo</div>
+                            <div class="fw-bold font-mono" id="detailKpiUnit">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>Chỉ tiêu này đã được khóa theo kế hoạch giao. Vào kỳ đánh giá, bạn sẽ có thể nhập kết quả thực hiện và tải lên tệp minh chứng số hóa.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function switchMyKpiView(mode) {
+            if (mode === 'cards') {
+                document.getElementById('mykpi-view-cards').classList.remove('d-none');
+                document.getElementById('mykpi-view-table').classList.add('d-none');
+            } else {
+                document.getElementById('mykpi-view-cards').classList.add('d-none');
+                document.getElementById('mykpi-view-table').classList.remove('d-none');
+            }
+        }
+
+        function openKpiDetailModal(id, name, target, unit) {
+            document.getElementById('detailKpiName').textContent = name;
+            document.getElementById('detailKpiTarget').textContent = target;
+            document.getElementById('detailKpiUnit').textContent = unit;
+            new bootstrap.Modal(document.getElementById('modalKpiItemDetail')).show();
+        }
+    </script>
+}

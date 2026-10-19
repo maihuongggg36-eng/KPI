@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Từ chối truy cập (403 Forbidden)";
+}
+
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 p-4 text-center">
+                <div class="display-1 text-danger mb-3">
+                    <i class="bi bi-shield-slash-fill"></i>
+                </div>
+                <h2 class="fw-bold text-dark mb-2">Không đủ thẩm quyền truy cập</h2>
+                <p class="text-muted mb-4">
+                    Vai trò hiện tại của bạn không nằm trong danh sách phân quyền (RBAC) hoặc vượt quá phạm vi dữ liệu (Data Scope) cho phép truy xuất tài nguyên này.
+                </p>
+
+                <div class="alert alert-warning text-start small mb-4">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Gợi ý:</strong> Bạn có thể quay lại trang đăng nhập và sử dụng tính năng <strong>Chuyển đổi vai trò nhanh 1-Click</strong> (Director, HR, Accountant, Admin) để trải nghiệm đầy đủ quyền hạn.
+                </div>
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4 py-2">
+                        <i class="bi bi-house me-1"></i> Về Trang chủ
+                    </a>
+                    <a asp-controller="Auth" asp-action="Login" class="btn btn-primary px-4 py-2">
+                        <i class="bi bi-arrow-repeat me-1"></i> Đổi tài khoản khác
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

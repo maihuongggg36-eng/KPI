@@ -1,0 +1,350 @@
+@model KPI.Web.ViewModels.CivilServant.CivilServantDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Phân Tích Công Chức & Chuẩn Gauss";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var db = Model.Dashboard;
+    var quota = db.QuotaStatus;
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/CivilServant/Index?periodId=@Model.SelectedPeriodId">Xếp Loại Công Chức</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Dashboard Phân Tích</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-graph-up-arrow me-2 text-primary"></i>Dashboard Phân Tích Phân Bổ Xếp Loại & Chuẩn Gauss
+            </h1>
+            <p class="text-secondary small mb-0">
+                Thẩm định phân bổ xếp loại toàn cơ quan so sánh với mô hình phân phối chuẩn Gauss (15-70-10-5) và khống chế trần 20% (BR-06)
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- Period Selector -->
+            <form method="get" action="/CivilServant/Dashboard" class="d-flex align-items-center gap-2">
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </form>
+
+            <a href="/CivilServant/Index?periodId=@Model.SelectedPeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-table me-1"></i>Bảng theo dõi
+            </a>
+        </div>
+    </div>
+
+    <!-- COMPLIANCE BANNER -->
+    <div class="card-enterprise p-3 mb-4 border-start border-4 @(quota.IsCapExceeded ? "border-danger bg-danger-subtle" : "border-success bg-success-subtle")">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="@(quota.IsCapExceeded ? "text-danger" : "text-success") fs-2">
+                    <i class="bi @(quota.IsCapExceeded ? "bi-exclamation-diamond-fill" : "bi-shield-fill-check")"></i>
+                </div>
+                <div>
+                    <div class="fw-bold fs-6 @(quota.IsCapExceeded ? "text-danger" : "text-success")">
+                        @(quota.IsCapExceeded ? "CẢNH BÁO: KHÔNG ĐẠT CHUẨN NGHỊ ĐỊNH 90/2020/NĐ-CP (BR-06)" : "TRẠNG THÁI TUÂN THỦ: ĐẠT CHUẨN QUY ĐỊNH NGHỊ ĐỊNH 90/2020/NĐ-CP")
+                    </div>
+                    <div class="small text-muted">
+                        @quota.WarningMessage
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="badge @(quota.IsCapExceeded ? "bg-danger" : "bg-success") px-3 py-2 rounded-pill fs-6 font-mono">
+                    Tỷ lệ Xuất sắc: @quota.CurrentRate% / Trần 20%
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS 4 CARDS -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Xuất sắc -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 border-top border-4 border-warning h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-secondary fw-semibold text-uppercase">Hoàn thành xuất sắc</span>
+                    <span class="badge bg-warning-subtle text-warning-emphasis font-mono">Trần &le; 20%</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 my-1">
+                    <span class="display-6 fw-bold font-mono text-warning">@db.CountExcellent</span>
+                    <span class="text-secondary small">cán bộ</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted pt-2 border-top">
+                    <span>Thực tế: <strong class="text-dark font-mono">@db.RateExcellent%</strong></span>
+                    <span>Gauss chuẩn: <strong class="text-secondary font-mono">15%</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Tốt -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 border-top border-4 border-success h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-secondary fw-semibold text-uppercase">Hoàn thành tốt</span>
+                    <span class="badge bg-success-subtle text-success font-mono">Chủ đạo</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 my-1">
+                    <span class="display-6 fw-bold font-mono text-success">@db.CountGood</span>
+                    <span class="text-secondary small">cán bộ</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted pt-2 border-top">
+                    <span>Thực tế: <strong class="text-dark font-mono">@db.RateGood%</strong></span>
+                    <span>Gauss chuẩn: <strong class="text-secondary font-mono">70%</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Hoàn thành nhiệm vụ -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 border-top border-4 border-primary h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-secondary fw-semibold text-uppercase">Hoàn thành nhiệm vụ</span>
+                    <span class="badge bg-primary-subtle text-primary font-mono">Đạt yêu cầu</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 my-1">
+                    <span class="display-6 fw-bold font-mono text-primary">@db.CountSatisfactory</span>
+                    <span class="text-secondary small">cán bộ</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted pt-2 border-top">
+                    <span>Thực tế: <strong class="text-dark font-mono">@db.RateSatisfactory%</strong></span>
+                    <span>Gauss chuẩn: <strong class="text-secondary font-mono">10%</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Không hoàn thành -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 border-top border-4 border-danger h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-secondary fw-semibold text-uppercase">Không hoàn thành</span>
+                    <span class="badge bg-danger-subtle text-danger font-mono">BR-07 / Kém</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 my-1">
+                    <span class="display-6 fw-bold font-mono text-danger">@db.CountUnsatisfactory</span>
+                    <span class="text-secondary small">cán bộ</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted pt-2 border-top">
+                    <span>Thực tế: <strong class="text-dark font-mono">@db.RateUnsatisfactory%</strong></span>
+                    <span>Gauss chuẩn: <strong class="text-secondary font-mono">5%</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 1: DONUT & BELL CURVE GAUSS -->
+    <div class="row g-4 mb-4">
+        <!-- Donut Chart: Phân bổ xếp loại toàn cơ quan -->
+        <div class="col-lg-5">
+            <div class="card-enterprise p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Phân Bổ Xếp Loại Cơ Quan
+                    </h6>
+                    <span class="badge bg-light text-secondary border font-mono small">Tổng: @db.TotalCivilServants CB</span>
+                </div>
+                <div id="classificationDonutChart" style="min-height: 280px;"></div>
+                <div class="mt-3 pt-3 border-top small text-muted text-center">
+                    Cơ cấu xếp loại công chức, giảng viên trong kỳ đánh giá
+                </div>
+            </div>
+        </div>
+
+        <!-- Bell Curve Gauss Chart: So sánh thực tế vs Chuẩn 15-70-10-5 -->
+        <div class="col-lg-7">
+            <div class="card-enterprise p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-bell-fill me-2 text-warning"></i>So Sánh Phân Bổ Thực Tế vs Chuẩn Gauss (15-70-10-5)
+                        </h6>
+                        <span class="small text-secondary">Đối chiếu phân phối xác suất hình chuông chuẩn hóa</span>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-2">Gauss Standard</span>
+                </div>
+                <div id="bellCurveComparisonChart" style="min-height: 280px;"></div>
+                <div class="mt-3 pt-3 border-top small text-muted">
+                    <i class="bi bi-lightbulb text-warning me-1"></i>Độ lệch chuẩn thể hiện sự công bằng và khách quan trong công tác bình xét thi đua khen thưởng của cơ quan.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 2: TREND CHART -->
+    <div class="card-enterprise p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-graph-up me-2 text-success"></i>Xu Hướng Xếp Loại Qua Các Kỳ Đánh Giá
+                </h6>
+                <span class="small text-secondary">Theo dõi sự biến động tỷ lệ Hoàn thành xuất sắc (&le;20%) và Hoàn thành tốt</span>
+            </div>
+            <span class="badge bg-light text-muted border font-mono">3 Kỳ Gần Nhất</span>
+        </div>
+        <div id="trendChart" style="min-height: 260px;"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        initDonutChart();
+        initBellCurveChart();
+        initTrendChart();
+    });
+
+    // 1. Biểu đồ Donut: Phân bổ xếp loại
+    function initDonutChart() {
+        const donutEl = document.querySelector('#classificationDonutChart');
+        if (!donutEl) return;
+
+        const options = {
+            series: [@db.CountExcellent, @db.CountGood, @db.CountSatisfactory, @db.CountUnsatisfactory],
+            labels: ['Xuất sắc', 'Tốt', 'Hoàn thành', 'Không HT'],
+            colors: ['#f59e0b', '#10b981', '#3b82f6', '#ef4444'],
+            chart: {
+                type: 'donut',
+                height: 290
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Tổng số CB',
+                                formatter: () => '@db.TotalCivilServants'
+                            }
+                        }
+                    }
+                }
+            },
+            legend: {
+                position: 'bottom',
+                fontFamily: 'Inter, sans-serif'
+            },
+            dataLabels: {
+                formatter: (val) => val.toFixed(1) + '%'
+            }
+        };
+
+        new ApexCharts(donutEl, options).render();
+    }
+
+    // 2. Biểu đồ Bell Curve Gauss (So sánh Thực tế vs Chuẩn 15-70-10-5)
+    function initBellCurveChart() {
+        const bellEl = document.querySelector('#bellCurveComparisonChart');
+        if (!bellEl) return;
+
+        const options = {
+            series: [{
+                name: 'Thực tế (%)',
+                data: [@db.RateExcellent, @db.RateGood, @db.RateSatisfactory, @db.RateUnsatisfactory]
+            }, {
+                name: 'Chuẩn Gauss (15-70-10-5)',
+                data: [15, 70, 10, 5]
+            }],
+            chart: {
+                type: 'bar',
+                height: 290,
+                toolbar: { show: false }
+            },
+            colors: ['#2563eb', '#94a3b8'],
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    borderRadius: 4
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: (val) => val + '%'
+            },
+            xaxis: {
+                categories: ['Xuất sắc', 'Tốt', 'Hoàn thành', 'Không hoàn thành'],
+                labels: {
+                    style: { fontFamily: 'Inter, sans-serif' }
+                }
+            },
+            yaxis: {
+                title: { text: 'Tỷ lệ %' },
+                max: 100
+            },
+            legend: {
+                position: 'top',
+                fontFamily: 'Inter, sans-serif'
+            },
+            tooltip: {
+                y: {
+                    formatter: (val) => val + '%'
+                }
+            }
+        };
+
+        new ApexCharts(bellEl, options).render();
+    }
+
+    // 3. Biểu đồ Trend qua các kỳ
+    function initTrendChart() {
+        const trendEl = document.querySelector('#trendChart');
+        if (!trendEl) return;
+
+        const periods = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(db.TrendPeriods));
+        const excellentRates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(db.TrendExcellentRates));
+        const goodRates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(db.TrendGoodRates));
+
+        const options = {
+            series: [{
+                name: 'Tỷ lệ Xuất sắc (Trần 20%)',
+                data: excellentRates
+            }, {
+                name: 'Tỷ lệ Hoàn thành tốt',
+                data: goodRates
+            }],
+            chart: {
+                height: 260,
+                type: 'line',
+                toolbar: { show: false }
+            },
+            colors: ['#f59e0b', '#10b981'],
+            stroke: {
+                width: [3, 3],
+                curve: 'smooth'
+            },
+            markers: {
+                size: 5
+            },
+            xaxis: {
+                categories: periods,
+                labels: { style: { fontFamily: 'Inter, sans-serif' } }
+            },
+            yaxis: {
+                title: { text: 'Tỷ lệ %' },
+                max: 100
+            },
+            legend: {
+                position: 'top',
+                fontFamily: 'Inter, sans-serif'
+            },
+            tooltip: {
+                y: {
+                    formatter: (val) => val + '%'
+                }
+            }
+        };
+
+        new ApexCharts(trendEl, options).render();
+    }
+</script>

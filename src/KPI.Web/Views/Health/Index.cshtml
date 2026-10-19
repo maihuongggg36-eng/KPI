@@ -1,0 +1,259 @@
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@model HealthReport
+@{
+    ViewData["Title"] = "Giám Sát Sức Khỏe Hệ Thống (Health Check Dashboard)";
+    var isHealthy = Model.Status == HealthStatus.Healthy;
+    var statusBadgeClass = isHealthy ? "bg-success" : (Model.Status == HealthStatus.Degraded ? "bg-warning text-dark" : "bg-danger");
+    var statusText = isHealthy ? "HOẠT ĐỘNG HOÀN HẢO" : (Model.Status == HealthStatus.Degraded ? "CẢNH BÁO / SUY GIẢM" : "SỰ CỐ NGHIÊM TRỌNG");
+    var uptime = (TimeSpan)ViewBag.Uptime;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Hệ thống KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Giám sát & Vận hành</li>
+                </ol>
+            </nav>
+            <h1 class="h3 font-weight-bold mb-1 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-heart-pulse-fill text-danger pulse-anim"></i>
+                Giám Sát Sức Khỏe & Vận Hành Hệ Thống
+            </h1>
+            <p class="text-muted small mb-0">Theo dõi trạng thái thời gian thực của Cơ sở dữ liệu, Bộ nhớ máy chủ, Ổ đĩa lưu trữ và Dịch vụ nền</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge @statusBadgeClass fs-6 px-3 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-circle-fill me-1 small"></i> @statusText
+            </span>
+            <a href="/health/status" target="_blank" class="btn btn-outline-info btn-sm shadow-sm">
+                <i class="bi bi-braces me-1"></i> JSON API
+            </a>
+            <button onclick="window.location.reload()" class="btn btn-primary btn-sm shadow-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Telemetry Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-body">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Thời Gian Hoạt Động (Uptime)</span>
+                            <h3 class="fw-bold my-1 text-primary">@uptime.Days ngày @uptime.Hours giờ</h3>
+                            <span class="text-success small fw-medium">
+                                <i class="bi bi-clock-history me-1"></i> Khởi động: @ViewBag.ProcessStartTime.ToString("HH:mm dd/MM/yyyy")
+                            </span>
+                        </div>
+                        <div class="rounded-circle bg-primary-subtle text-primary p-3">
+                            <i class="bi bi-hourglass-split fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-body">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Bộ Nhớ RAM Đã Cấp</span>
+                            <h3 class="fw-bold my-1 text-info">@ViewBag.MemoryUsedMb MB</h3>
+                            <span class="text-muted small fw-medium">
+                                <i class="bi bi-cpu me-1"></i> GC Managed Heap
+                            </span>
+                        </div>
+                        <div class="rounded-circle bg-info-subtle text-info p-3">
+                            <i class="bi bi-memory fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-body">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Tổng Số Tiểu Trình (Threads)</span>
+                            <h3 class="fw-bold my-1 text-success">@ViewBag.ThreadsCount Threads</h3>
+                            <span class="text-muted small fw-medium">
+                                <i class="bi bi-activity me-1"></i> ThreadPool Active
+                            </span>
+                        </div>
+                        <div class="rounded-circle bg-success-subtle text-success p-3">
+                            <i class="bi bi-diagram-3 fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-body">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small fw-semibold text-uppercase">Nền Tảng Thực Thi (.NET)</span>
+                            <h3 class="fw-bold my-1 text-dark">.NET 8.0 LTS</h3>
+                            <span class="text-muted small fw-medium text-truncate d-block" style="max-width: 180px;" title="@ViewBag.OsVersion">
+                                <i class="bi bi-hdd-rack me-1"></i> @ViewBag.MachineName
+                            </span>
+                        </div>
+                        <div class="rounded-circle bg-secondary-subtle text-secondary p-3">
+                            <i class="bi bi-window-stack fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Checks Detail Table -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check text-success"></i> Chi Tiết Kiểm Tra Sức Khỏe Các Thành Phần (Probes)
+            </h5>
+            <span class="badge bg-light text-dark border">
+                Tổng thời gian kiểm tra: @Model.TotalDuration.TotalMilliseconds.ToString("F1") ms
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Thành phần (Component)</th>
+                            <th>Trạng thái (Status)</th>
+                            <th>Thời gian phản hồi</th>
+                            <th>Chi tiết kết quả & Tham số giám sát</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.Entries)
+                        {
+                            var badgeClass = entry.Value.Status == HealthStatus.Healthy ? "bg-success-subtle text-success border border-success" :
+                                (entry.Value.Status == HealthStatus.Degraded ? "bg-warning-subtle text-warning border border-warning" : "bg-danger-subtle text-danger border border-danger");
+                            var icon = entry.Key.Contains("Database", StringComparison.OrdinalIgnoreCase) ? "bi-database-fill-check" :
+                                (entry.Key.Contains("Memory", StringComparison.OrdinalIgnoreCase) ? "bi-memory" : "bi-hdd-fill");
+
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark">
+                                    <i class="bi @icon me-2 text-primary"></i> @entry.Key
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass px-2 py-1 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i> @entry.Value.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="font-monospace small">@entry.Value.Duration.TotalMilliseconds.ToString("F2") ms</span>
+                                </td>
+                                <td>
+                                    <div class="text-muted small mb-1">@entry.Value.Description</div>
+                                    @if (entry.Value.Data.Count > 0)
+                                    {
+                                        <div class="d-flex flex-wrap gap-2 mt-1">
+                                            @foreach (var d in entry.Value.Data)
+                                            {
+                                                <span class="badge bg-light text-secondary border font-monospace small">
+                                                    @d.Key: <strong class="text-dark">@d.Value</strong>
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information Summary Card -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="card-title mb-0 fw-bold"><i class="bi bi-gear-wide-connected text-primary me-2"></i> Thông Tin Máy Chủ & Hạ Tầng</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Tên máy chủ (Host):</span>
+                            <span class="fw-semibold">@ViewBag.MachineName</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Hệ điều hành:</span>
+                            <span class="fw-semibold">@ViewBag.OsVersion</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Môi trường (.NET Version):</span>
+                            <span class="fw-semibold">@ViewBag.DotnetVersion</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Cơ chế Nén (Response Compression):</span>
+                            <span class="badge bg-success-subtle text-success">Brotli / Gzip Enabled</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Bộ đệm Dữ liệu (Caching):</span>
+                            <span class="badge bg-primary-subtle text-primary">IMemoryCache + Output/Response Cache</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="card-title mb-0 fw-bold"><i class="bi bi-shield-lock-fill text-success me-2"></i> Tiêu Chuẩn Bảo Mật & Giám Sát</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Xác thực & Ủy quyền:</span>
+                            <span class="badge bg-success">Cookie Auth + RBAC Data Scope</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Chống Brute Force:</span>
+                            <span class="badge bg-info">Rate Limiter (15 req/phút)</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Bảo mật OWASP Headers:</span>
+                            <span class="badge bg-secondary">HSTS, CSP, X-Frame, Nosniff</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Ghi nhận Nhật ký (Logging):</span>
+                            <span class="badge bg-dark">Serilog Structured Logs + Rolling File</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">Thông báo Thời gian thực:</span>
+                            <span class="badge bg-warning text-dark">SignalR WebSockets / SSE</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pulse-anim {
+        animation: heartPulse 1.5s infinite;
+    }
+    @@keyframes heartPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+</style>

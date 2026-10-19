@@ -1,0 +1,183 @@
+@model KPI.Application.DTOs.EmployeeDashboardDto
+
+<!-- 1. Header Cá nhân & Circular Progress -->
+<div class="card-enterprise p-4 mb-4" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border-left: 4px solid var(--color-primary);">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary fw-bold"><i class="bi bi-person-badge me-1"></i>Hồ sơ Cán bộ</span>
+                <span class="badge bg-secondary-subtle text-secondary">@Model.DepartmentName</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-primary-emphasis">Đồng chí: @Model.FullName</h3>
+            <p class="text-secondary small mb-3">
+                Chức danh: <strong>@Model.PositionTitle</strong> • Kỳ đánh giá: <strong>Năm 2026 (Nghị định 90/2020 & 48/2023)</strong>
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-sm px-3 rounded-pill btn-lift">
+                    <i class="bi bi-pencil-square me-1"></i> Thực hiện Tự Đánh giá
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 rounded-pill">
+                    <i class="bi bi-receipt me-1"></i> Xem Phiếu Mẫu 02 (NĐ 90)
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-info btn-sm px-3 rounded-pill">
+                    <i class="bi bi-cash me-1"></i> Tra cứu Lương Hiệu quả KPI
+                </a>
+            </div>
+        </div>
+
+        <!-- Radial Bar / Circular Progress -->
+        <div class="col-lg-4 text-center mt-3 mt-lg-0">
+            <div class="d-flex flex-column align-items-center">
+                <div id="employeeRadialChart" style="min-height: 200px;"></div>
+                <div class="fw-semibold text-secondary small mt-n2">Mức độ Hoàn thành Mục tiêu Tổng thể</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Bộ 4 Thẻ Thống kê Cá nhân -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Điểm Tự đánh giá", 
+            ["Value"] = $"{Model.CurrentScore:N1} đ", 
+            ["Subtitle"] = "Thang điểm chuẩn 100", 
+            ["Icon"] = "bi-star-fill", 
+            ["Color"] = "warning",
+            ["Trend"] = "Đạt mục tiêu",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Xếp loại Dự kiến", 
+            ["Value"] = "Xuất sắc", 
+            ["Subtitle"] = "Nghị định 90/2020", 
+            ["Icon"] = "bi-award-fill", 
+            ["Color"] = "success",
+            ["Trend"] = "Đạt chuẩn BR-08",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Hạn chót Tự chấm", 
+            ["Value"] = $"Còn {Model.DaysRemaining} ngày", 
+            ["Subtitle"] = "Đóng cổng: 20/11/2026", 
+            ["Icon"] = "bi-calendar-event-fill", 
+            ["Color"] = "info",
+            ["Trend"] = "Đúng tiến độ",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Minh chứng Công tác", 
+            ["Value"] = $"{Model.EvidenceCount} tệp", 
+            ["Subtitle"] = "Quyết định, biên bản, bài báo", 
+            ["Icon"] = "bi-paperclip", 
+            ["Color"] = "primary",
+            ["Trend"] = "Đã xác thực",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+</div>
+
+<!-- 3. Tiến độ Quy trình Đánh giá (Milestone Timeline) & Chi tiết Chỉ tiêu KPI -->
+<div class="row g-4 mb-4">
+    <!-- Milestone Timeline -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-diagram-3-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold mb-0">Tiến trình Đánh giá (5 Mốc)</h6>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">Kỳ 2026</span>
+            </div>
+            <div class="p-3">
+                <div class="milestone-timeline">
+                    @foreach (var m in Model.Milestones)
+                    {
+                        var statusClass = m.Status == "Completed" ? "text-success border-success" :
+                                          m.Status == "Current" ? "text-primary border-primary fw-bold" : "text-muted border-secondary";
+                        var badgeClass = m.Status == "Completed" ? "bg-success" :
+                                         m.Status == "Current" ? "bg-primary animate-pulse" : "bg-secondary";
+
+                        <div class="d-flex gap-3 mb-3 position-relative">
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                                      style="width: 28px; height: 28px; @(m.Status == "Completed" ? "background:#10b981;" : m.Status == "Current" ? "background:#2563eb;" : "background:#94a3b8;")">
+                                    @if (m.Status == "Completed") { <i class="bi bi-check-lg" style="font-size: 14px;"></i> }
+                                    else if (m.Status == "Current") { <i class="bi bi-arrow-repeat" style="font-size: 14px;"></i> }
+                                    else { <i class="bi bi-circle" style="font-size: 10px;"></i> }
+                                </span>
+                                <div class="flex-grow-1" style="width: 2px; background: #e2e8f0; min-height: 24px;"></div>
+                            </div>
+                            <div class="flex-grow-1 pb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="small @(m.Status == "Current" ? "fw-bold text-primary" : "fw-semibold")">@m.StepTitle</span>
+                                    <span class="text-secondary small font-mono" style="font-size: 10px;">@m.Date</span>
+                                </div>
+                                <p class="text-secondary small mb-0" style="font-size: 11px;">@m.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng Chỉ tiêu KPI Cá nhân -->
+    <div class="col-lg-8">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-card-checklist text-success fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Bảng Chỉ tiêu Hiệu suất Cá nhân (Trọng số chuẩn 100%)</h6>
+                        <small class="text-secondary">Theo dõi chi tiết mục tiêu, kết quả thực hiện và điểm số tạm tính</small>
+                    </div>
+                </div>
+                <span class="badge bg-success-subtle text-success">4 Chỉ tiêu</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Mã & Tên Chỉ tiêu</th>
+                            <th>Trọng số</th>
+                            <th>Mục tiêu</th>
+                            <th>Thực hiện</th>
+                            <th>Điểm số</th>
+                            <th>Minh chứng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var kpi in Model.PersonalKpis)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@kpi.Name</div>
+                                    <small class="text-secondary font-mono">@kpi.Code</small>
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-secondary font-mono">@kpi.Weight.ToString("F0")%</span></td>
+                                <td><span class="small font-mono">@kpi.Target</span></td>
+                                <td><span class="small font-mono fw-bold text-primary">@kpi.Actual</span></td>
+                                <td><span class="badge bg-success-subtle text-success font-mono fw-bold">@kpi.Score.ToString("F1")</span></td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        <i class="bi bi-paperclip me-1"></i>@kpi.AttachedEvidences file
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

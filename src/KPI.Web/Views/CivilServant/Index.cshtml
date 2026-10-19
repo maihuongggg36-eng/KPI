@@ -1,0 +1,310 @@
+@model KPI.Web.ViewModels.CivilServant.CivilServantIndexViewModel
+@{
+    ViewData["Title"] = "Quản Lý Cán Bộ Công Chức Theo Nghị Định 90 & 48";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var quota = Model.QuotaStatus;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Xếp Loại Công Chức (NĐ 90)</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-patch-check-fill me-2 text-primary"></i>Phân Loại Cán Bộ Công Chức Theo Nghị Định 90 & 48
+            </h1>
+            <p class="text-secondary small mb-0">Theo dõi ngạch bậc, điểm KPI, khống chế trần 20% Xuất sắc (BR-06) và trích xuất Biểu mẫu Mẫu 01/02 A4</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="/CivilServant/Dashboard?periodId=@Model.SelectedPeriodId" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-graph-up me-1"></i>Dashboard Gauss (15-70-10-5)
+            </a>
+        </div>
+    </div>
+
+    <!-- BR-06 ALERT BANNER (PULSE ANIMATION ON VIOLATION) -->
+    @if (quota.IsCapExceeded)
+    {
+        <div class="alert alert-danger border-2 border-danger p-3 mb-4 rounded-4 shadow-sm pulse-danger d-flex align-items-center gap-3">
+            <div class="bg-danger text-white rounded-circle p-2 fs-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="bi bi-exclamation-octagon-fill"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-bold fs-6 text-danger text-uppercase tracking-wider">
+                    <i class="bi bi-shield-slash me-1"></i>CẢNH BÁO VI PHẠM NGHỊ ĐỊNH 90/2020/NĐ-CP (QUY TẮC BR-06)
+                </div>
+                <div class="small text-dark mt-1">
+                    Số lượng cán bộ xếp loại <strong>Hoàn thành xuất sắc nhiệm vụ</strong> hiện tại (<span class="font-mono text-danger fw-bold fs-6">@quota.CurrentExcellentCount</span>) đã vượt quá <strong>20%</strong> số lượng cán bộ Hoàn thành tốt trở lên (Trần tối đa cho phép: <span class="font-mono text-success fw-bold fs-6">@quota.MaxAllowedExcellent</span> cán bộ). Hệ thống đã kích hoạt <strong>Khóa Tự Động (Auto-Lock)</strong> không cho phê duyệt thêm mức Xuất sắc!
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- STATS OVERVIEW & GAUGE METER CARD -->
+    <div class="row g-3 mb-4">
+        <!-- Radial Gauge Meter: Kiểm soát trần 20% -->
+        <div class="col-lg-4">
+            <div class="card-enterprise p-4 h-100 text-center d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-secondary fw-semibold text-uppercase">Tỷ Lệ Xuất Sắc (BR-06)</span>
+                    <span class="badge @(quota.IsCapExceeded ? "bg-danger" : "bg-success") rounded-pill px-2">
+                        @(quota.IsCapExceeded ? "Vượt trần 20%" : "Đạt chuẩn <=20%")
+                    </span>
+                </div>
+
+                <div id="excellenceQuotaGauge" style="min-height: 200px;"></div>
+
+                <div class="mt-2 pt-2 border-top d-flex justify-content-around text-center small">
+                    <div>
+                        <div class="text-secondary" style="font-size: 11px;">Hiện tại</div>
+                        <div class="font-mono fw-bold fs-6 @(quota.IsCapExceeded ? "text-danger" : "text-primary")">@quota.CurrentExcellentCount CB</div>
+                    </div>
+                    <div>
+                        <div class="text-secondary" style="font-size: 11px;">Trần tối đa (20%)</div>
+                        <div class="font-mono fw-bold fs-6 text-success">@quota.MaxAllowedExcellent CB</div>
+                    </div>
+                    <div>
+                        <div class="text-secondary" style="font-size: 11px;">Tốt trở lên</div>
+                        <div class="font-mono fw-bold fs-6 text-dark">@quota.CountGoodAndAbove CB</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 Quick Stat Cards -->
+        <div class="col-lg-8">
+            <div class="row g-3 h-100">
+                <div class="col-md-4">
+                    <div class="card-enterprise p-3 h-100 border-start border-4 border-warning d-flex flex-column justify-content-between">
+                        <div class="text-secondary small text-uppercase">Hoàn Thành Xuất Sắc</div>
+                        <div class="display-6 fw-bold font-mono text-warning my-1">@quota.CurrentExcellentCount</div>
+                        <div class="small text-muted">
+                            Chiếm <span class="font-mono fw-bold">@quota.CurrentRate%</span> / trần 20%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card-enterprise p-3 h-100 border-start border-4 border-success d-flex flex-column justify-content-between">
+                        <div class="text-secondary small text-uppercase">Hoàn Thành Tốt</div>
+                        <div class="display-6 fw-bold font-mono text-success my-1">
+                            @(Math.Max(0, quota.CountGoodAndAbove - quota.CurrentExcellentCount))
+                        </div>
+                        <div class="small text-muted">Cán bộ đạt từ 70 &rarr; 89.9 điểm</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card-enterprise p-3 h-100 border-start border-4 border-primary d-flex flex-column justify-content-between">
+                        <div class="text-secondary small text-uppercase">Tổng Nhân Sự Công Chức</div>
+                        <div class="display-6 fw-bold font-mono text-primary my-1">@Model.CivilServants.Count</div>
+                        <div class="small text-muted">Trong kỳ đánh giá được chọn</div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card-enterprise p-3 bg-light-subtle border">
+                        <div class="d-flex align-items-center gap-2 text-dark small fw-semibold">
+                            <i class="bi bi-info-circle-fill text-primary"></i>
+                            <span>Quy tắc thẩm định theo Nghị định 90/2020/NĐ-CP & Nghị định 48/2023/NĐ-CP:</span>
+                        </div>
+                        <div class="text-secondary small mt-1">
+                            &bull; <strong>BR-06:</strong> Số lượng công chức xếp loại Xuất sắc không vượt quá 20% số lượng công chức xếp loại Hoàn thành tốt trở lên.<br/>
+                            &bull; <strong>BR-07:</strong> Công chức bị kỷ luật Đảng hoặc chính quyền trong năm tự động xếp loại "Không hoàn thành nhiệm vụ" (Điểm liệt).<br/>
+                            &bull; <strong>BR-08:</strong> Công chức đạt điểm KPI &ge; 90 bắt buộc phải có đề tài/sáng kiến cải tiến được công nhận để đạt Xuất sắc.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4">
+        <form method="get" action="/CivilServant/Index" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả phòng ban --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.SelectedDepartmentId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small text-secondary mb-1">Ngạch bậc:</label>
+                <select name="rankCode" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả ngạch --</option>
+                    @foreach (var r in Model.PositionRanks)
+                    {
+                        <option value="@r.RankCode" selected="@(r.RankCode == Model.SelectedRankCode)">@r.RankName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small text-secondary mb-1">Mức xếp loại:</label>
+                <select name="classification" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả mức --</option>
+                    <option value="xuất sắc" selected="@(Model.SelectedClassification == "xuất sắc")">Xuất sắc</option>
+                    <option value="tốt" selected="@(Model.SelectedClassification == "tốt")">Tốt</option>
+                    <option value="hoàn thành nhiệm vụ" selected="@(Model.SelectedClassification == "hoàn thành nhiệm vụ")">Hoàn thành</option>
+                    <option value="không hoàn thành" selected="@(Model.SelectedClassification == "không hoàn thành")">Không hoàn thành</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="/CivilServant/Index" class="btn btn-outline-secondary btn-sm rounded-pill w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- MAIN CIVIL SERVANT TABLE -->
+    <div class="card-enterprise p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-person-lines-fill me-2 text-primary"></i>Danh Sách Cán Bộ Công Chức Theo Dõi
+            </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                @Model.CivilServants.Count Hồ sơ
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th>Cán bộ / Giảng viên</th>
+                        <th>Ngạch bậc & Hệ số</th>
+                        <th>Phòng ban</th>
+                        <th class="text-center">Điểm KPI</th>
+                        <th class="text-center">Điều kiện (BR-07, BR-08)</th>
+                        <th class="text-center">Xếp loại NĐ 90</th>
+                        <th style="width: 150px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.CivilServants.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Không tìm thấy cán bộ công chức nào phù hợp với bộ lọc.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Model.CivilServants.Count; i++)
+                        {
+                            var cs = Model.CivilServants[i];
+                            var isExcellent = cs.FinalizedRank.Contains("xuất sắc", StringComparison.OrdinalIgnoreCase);
+
+                            <tr>
+                                <td class="text-center font-mono text-muted">@(i + 1)</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@cs.AvatarUrl" alt="" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;">
+                                        <div>
+                                            <div class="fw-bold text-dark">
+                                                @cs.FullName
+                                                @if (cs.IsLeadership)
+                                                {
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1" style="font-size: 10px;">Lãnh đạo</span>
+                                                }
+                                            </div>
+                                            <div class="font-mono text-muted small">@cs.CivilServantCode</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold text-dark">@cs.OfficialRankName</div>
+                                    <div class="small text-muted font-mono">Bậc @cs.SalaryGrade &bull; HSL: @cs.SalaryCoefficient.ToString("F2")</div>
+                                </td>
+                                <td class="small text-secondary">@cs.DepartmentName</td>
+                                <td class="text-center font-mono fw-bold fs-6 text-primary">
+                                    @(cs.KpiScore > 0 ? cs.KpiScore.ToString("F1") : "-")
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column align-items-center gap-1">
+                                        @if (cs.HasDisciplinaryAction)
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-2" style="font-size: 10px;" title="Điểm liệt do kỷ luật (BR-07)">
+                                                <i class="bi bi-x-circle me-1"></i>Bị kỷ luật (BR-07)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-success border rounded-pill px-2" style="font-size: 10px;">
+                                                <i class="bi bi-shield-check me-1"></i>Kỷ luật tốt
+                                            </span>
+                                        }
+
+                                        @if (cs.HasApprovedInitiative)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2" style="font-size: 10px;" title="Đủ điều kiện xét Xuất sắc (BR-08)">
+                                                <i class="bi bi-lightbulb-fill me-1"></i>Có sáng kiến (BR-08)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted border rounded-pill px-2" style="font-size: 10px;">
+                                                Chưa có sáng kiến
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(isExcellent ? "bg-warning text-dark border border-warning" : (cs.FinalizedRank.Contains("tốt") ? "bg-success" : (cs.FinalizedRank.Contains("Không") ? "bg-danger" : "bg-primary"))) rounded-pill px-3 py-1 font-mono small">
+                                        @cs.FinalizedRank
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="/CivilServant/Form01_02?employeeId=@cs.EmployeeId&periodId=@Model.SelectedPeriodId" 
+                                       class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm"
+                                       title="Mở Biểu mẫu Quốc gia">
+                                        <i class="bi bi-file-earmark-text me-1"></i>@(cs.IsLeadership ? "Mẫu 01" : "Mẫu 02")
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    window.quotaData = {
+        rate: @quota.CurrentRate,
+        current: @quota.CurrentExcellentCount,
+        maxAllowed: @quota.MaxAllowedExcellent,
+        isExceeded: @(quota.IsCapExceeded ? "true" : "false")
+    };
+</script>
+<script src="~/js/civil-servant.js"></script>

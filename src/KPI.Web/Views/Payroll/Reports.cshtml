@@ -1,0 +1,379 @@
+@model KPI.Web.ViewModels.Payroll.PayrollReportViewModel
+@{
+    var r = Model.Report;
+    var stats = r.Stats;
+    ViewData["Title"] = $"Báo Cáo Phân Tích Lương & Quỹ Thưởng - {r.PeriodName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Payroll/Index">Lương 3P</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Báo Cáo Quỹ Lương</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Báo Cáo Phân Tích Cơ Cấu Lương & Quỹ Thưởng KPI
+            </h1>
+            <p class="text-secondary small mb-0">
+                Thống kê đa chiều cơ cấu 3P (P1 Vị trí, P2 Chức danh, P3 Hiệu quả) và phân bổ giải ngân tại Học viện
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>In Báo Cáo (Ctrl+P)
+            </button>
+            <a href="/Payroll/ExportCashSheetCsv?periodId=@Model.SelectedPeriodId" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel Dữ Liệu
+            </a>
+            <a href="/Payroll/Index?periodId=@Model.SelectedPeriodId" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-cash-stack me-1"></i>Bảng Tính Lương
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR (CHỌN KỲ) -->
+    <div class="card-enterprise p-3 mb-4 no-print">
+        <form method="get" action="/Payroll/Reports" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Chọn Kỳ Đánh Giá & Báo Cáo:</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
+                    <select name="periodId" class="form-select" onchange="this.form.submit()">
+                        @foreach (var period in Model.Periods)
+                        {
+                            <option value="@period.Id" selected="@(period.Id == Model.SelectedPeriodId)">
+                                @period.Name (@period.Year)
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-7 text-md-end pt-md-3">
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill font-mono">
+                    <i class="bi bi-building me-1"></i>Dữ liệu tổng hợp toàn cơ quan Học viện Hành chính Quốc gia
+                </span>
+            </div>
+        </form>
+    </div>
+
+    <!-- REPORT PRINT HEADER (Chỉ hiện khi in) -->
+    <div class="d-none d-print-block text-center mb-4">
+        <div class="row align-items-center">
+            <div class="col-6 text-start">
+                <div class="fw-bold small text-uppercase">HỌC VIỆN HÀNH CHÍNH QUỐC GIA</div>
+                <div class="small">Phòng Kế hoạch - Tài chính</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="small text-muted">Thời điểm xuất: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+        </div>
+        <h2 class="h4 fw-bold mt-3 text-uppercase">BÁO CÁO PHÂN TÍCH QUỸ LƯƠNG & HIỆU QUẢ CÔNG TÁC (3P)</h2>
+        <div class="small">Kỳ đánh giá: <strong class="text-uppercase">@r.PeriodName</strong></div>
+        <hr />
+    </div>
+
+    <!-- STATS OVERVIEW CARDS (4 CARDS) -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Tổng quỹ lương thực lĩnh -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-primary">
+                <div class="text-secondary small text-uppercase fw-semibold">Tổng Quỹ Lương (Net)</div>
+                <div class="display-6 fw-bold font-mono text-primary my-1" style="font-size: 1.6rem;">
+                    @stats.TotalNetSalary.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">Tổng số cán bộ: <strong class="text-dark font-mono">@stats.TotalEmployees</strong> CB</div>
+            </div>
+        </div>
+
+        <!-- 2. Quỹ P3 theo KPI -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Quỹ P3 (Theo KPI)</span>
+                    <span class="badge bg-success-subtle text-success">Hiệu quả</span>
+                </div>
+                <div class="display-6 fw-bold font-mono text-success my-1" style="font-size: 1.6rem;">
+                    @stats.TotalP3Salary.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">
+                    Tỷ trọng: 
+                    <strong class="text-success font-mono">
+                        @(stats.TotalNetSalary > 0 ? (stats.TotalP3Salary / stats.TotalNetSalary * 100).ToString("0.0") : "0")%
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Đã chi tiền mặt -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Đã Chi Tiền Mặt</span>
+                    <span class="badge bg-info-subtle text-info font-mono">@stats.PaymentRate%</span>
+                </div>
+                <div class="display-6 fw-bold font-mono text-info my-1" style="font-size: 1.6rem;">
+                    @stats.TotalCashPaid.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">Đã ký nhận: <strong class="text-dark font-mono">@stats.CountPaid / @stats.TotalEmployees</strong> CB</div>
+            </div>
+        </div>
+
+        <!-- 4. Còn chờ chi tiền mặt -->
+        <div class="col-md-3">
+            <div class="card-enterprise p-3 h-100 border-start border-4 border-warning">
+                <div class="text-secondary small text-uppercase fw-semibold">Chờ Chi Tiền Mặt</div>
+                <div class="display-6 fw-bold font-mono text-warning my-1" style="font-size: 1.6rem;">
+                    @stats.TotalCashPending.ToString("N0") <span class="fs-6 text-muted">đ</span>
+                </div>
+                <div class="small text-muted">Chưa ký nhận: <strong class="text-danger font-mono">@stats.CountPending</strong> CB</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW: 2 APEXCHARTS -->
+    <div class="row g-4 mb-4">
+        <!-- CHART 1: CHI LƯƠNG THEO PHÒNG BAN (STACKED BAR) -->
+        <div class="col-lg-7">
+            <div class="card-enterprise p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-bar-chart-steps me-2 text-primary"></i>Cơ Cấu Lương 3P Theo Phòng Ban
+                        </h5>
+                        <div class="text-muted small">Phân bổ P1 (Lương cơ bản), P2 (Phụ cấp) và P3 (Hiệu quả KPI)</div>
+                    </div>
+                    <span class="badge bg-light text-secondary border font-mono">Đơn vị: Triệu VNĐ</span>
+                </div>
+                <div id="chartDepartmentStacked" style="min-height: 360px;"></div>
+            </div>
+        </div>
+
+        <!-- CHART 2: PHÂN BỔ LƯƠNG THEO BAND (HISTOGRAM) -->
+        <div class="col-lg-5">
+            <div class="card-enterprise p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-distribute-vertical me-2 text-success"></i>Phân Bổ Thu Nhập Theo Band
+                        </h5>
+                        <div class="text-muted small">Số lượng cán bộ theo từng khung thu nhập thực lĩnh</div>
+                    </div>
+                    <span class="badge bg-success-subtle text-success">Histogram</span>
+                </div>
+                <div id="chartSalaryBands" style="min-height: 360px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAILED SUMMARY TABLE BY DEPARTMENT -->
+    <div class="card-enterprise p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-table me-2 text-primary"></i>Bảng Tổng Hợp Chi Tiết Quỹ Lương Theo Đơn Vị
+                </h5>
+                <div class="text-muted small">Số liệu kế toán chi tiết phục vụ cân đối ngân sách và lập dự toán chi trả</div>
+            </div>
+            <a href="/Payroll/CashSheet?periodId=@Model.SelectedPeriodId" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-journal-check me-1"></i>Bảng Ký Nhận Mẫu 05a
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light small text-uppercase">
+                    <tr>
+                        <th style="width: 50px;">STT</th>
+                        <th>Phòng Ban / Khoa Chuyên Môn</th>
+                        <th class="text-end">Lương CB (P1)</th>
+                        <th class="text-end">Phụ cấp (P2)</th>
+                        <th class="text-end">Lương KPI (P3)</th>
+                        <th class="text-end">Tổng Thực Lĩnh</th>
+                        <th class="text-center" style="width: 140px;">Tỷ trọng P3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int idx = 1;
+                    }
+                    @foreach (var dept in r.DepartmentCharts)
+                    {
+                        var p3Percent = dept.TotalNet > 0 ? Math.Round((double)(dept.TotalP3 / dept.TotalNet) * 100, 1) : 0;
+                        <tr>
+                            <td class="text-center font-mono text-muted">@(idx++)</td>
+                            <td>
+                                <div class="fw-bold text-dark">@dept.DepartmentName</div>
+                            </td>
+                            <td class="text-end font-mono">@dept.TotalP1.ToString("N0") đ</td>
+                            <td class="text-end font-mono">@dept.TotalP2.ToString("N0") đ</td>
+                            <td class="text-end font-mono fw-bold text-success">@dept.TotalP3.ToString("N0") đ</td>
+                            <td class="text-end font-mono fw-bold text-primary fs-6">@dept.TotalNet.ToString("N0") đ</td>
+                            <td class="text-center">
+                                <span class="badge bg-success-subtle text-success font-mono">@p3Percent%</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td colspan="2" class="text-uppercase text-dark">TỔNG CỘNG HỌC VIỆN:</td>
+                        <td class="text-end font-mono">@stats.TotalBaseSalary.ToString("N0") đ</td>
+                        <td class="text-end font-mono">@stats.TotalAllowances.ToString("N0") đ</td>
+                        <td class="text-end font-mono text-success">@stats.TotalP3Salary.ToString("N0") đ</td>
+                        <td class="text-end font-mono text-primary fs-6">@stats.TotalNetSalary.ToString("N0") đ</td>
+                        <td class="text-center font-mono text-success">
+                            @(stats.TotalNetSalary > 0 ? (stats.TotalP3Salary / stats.TotalNetSalary * 100).ToString("0.0") : "0")%
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS & APEXCHARTS INITIALIZATION -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. DATA FOR DEPARTMENT STACKED BAR CHART
+        const deptNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.DepartmentCharts.Select(d => d.DepartmentName)));
+        const p1Data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.DepartmentCharts.Select(d => Math.Round(d.TotalP1 / 1000000m, 2))));
+        const p2Data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.DepartmentCharts.Select(d => Math.Round(d.TotalP2 / 1000000m, 2))));
+        const p3Data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.DepartmentCharts.Select(d => Math.Round(d.TotalP3 / 1000000m, 2))));
+
+        const stackedOptions = {
+            series: [
+                { name: 'Lương cơ bản (P1)', data: p1Data },
+                { name: 'Phụ cấp (P2)', data: p2Data },
+                { name: 'Lương KPI (P3)', data: p3Data }
+            ],
+            chart: {
+                type: 'bar',
+                height: 360,
+                stacked: true,
+                toolbar: { show: false },
+                fontFamily: 'Inter, sans-serif'
+            },
+            colors: ['#2563eb', '#f59e0b', '#10b981'],
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    borderRadius: 6,
+                    columnWidth: '45%'
+                }
+            },
+            dataLabels: { enabled: false },
+            xaxis: {
+                categories: deptNames,
+                labels: {
+                    rotate: -15,
+                    style: { fontSize: '11px', fontWeight: 500 }
+                }
+            },
+            yaxis: {
+                title: { text: 'Triệu đồng (VNĐ)' },
+                labels: {
+                    formatter: function (val) { return val.toFixed(1) + ' Tr'; }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) { return val.toLocaleString() + ' Triệu VNĐ'; }
+                }
+            },
+            legend: { position: 'top', horizontalAlign: 'right' }
+        };
+
+        const deptChartEl = document.querySelector("#chartDepartmentStacked");
+        if (deptChartEl && deptNames.length > 0) {
+            new ApexCharts(deptChartEl, stackedOptions).render();
+        }
+
+        // 2. DATA FOR SALARY BANDS HISTOGRAM
+        const bandLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.SalaryBands.Select(b => b.BandLabel)));
+        const bandCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(r.SalaryBands.Select(b => b.EmployeeCount)));
+
+        const bandOptions = {
+            series: [{
+                name: 'Số cán bộ',
+                data: bandCounts
+            }],
+            chart: {
+                type: 'bar',
+                height: 360,
+                toolbar: { show: false },
+                fontFamily: 'Inter, sans-serif'
+            },
+            colors: ['#6366f1'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 8,
+                    columnWidth: '50%',
+                    distributed: true,
+                    dataLabels: { position: 'top' }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) { return val + " người"; },
+                offsetY: -20,
+                style: { fontSize: '12px', colors: ["#1e293b"] }
+            },
+            xaxis: {
+                categories: bandLabels,
+                labels: {
+                    style: { fontSize: '11px', fontWeight: 500 }
+                }
+            },
+            yaxis: {
+                title: { text: 'Số lượng nhân sự' },
+                labels: {
+                    formatter: function (val) { return Math.round(val); }
+                }
+            },
+            legend: { show: false },
+            tooltip: {
+                y: {
+                    formatter: function (val) { return val + ' cán bộ'; }
+                }
+            }
+        };
+
+        const bandChartEl = document.querySelector("#chartSalaryBands");
+        if (bandChartEl && bandLabels.length > 0) {
+            new ApexCharts(bandChartEl, bandOptions).render();
+        }
+    });
+</script>
+
+<style>
+    @@media print {
+        body {
+            background: #fff !important;
+            font-size: 10pt !important;
+        }
+
+        .no-print, .app-sidebar, .app-header, .scroll-progress-bar, footer {
+            display: none !important;
+        }
+
+        .app-container, .main-content, .content-body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .card-enterprise {
+            border: 1px solid #ccc !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>

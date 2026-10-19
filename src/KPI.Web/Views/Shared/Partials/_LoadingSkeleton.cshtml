@@ -1,0 +1,26 @@
+@* 
+    _LoadingSkeleton.cshtml
+    Tham số ViewData:
+    - Rows: Số dòng skeleton (int, mặc định 4)
+*@
+@{
+    var rows = ViewData["Rows"] is int r ? r : 4;
+}
+
+<div class="card-enterprise p-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="skeleton-box" style="width: 48px; height: 48px; border-radius: var(--radius-md);"></div>
+        <div class="flex-grow-1">
+            <div class="skeleton-box mb-2" style="width: 40%; height: 18px;"></div>
+            <div class="skeleton-box" style="width: 60%; height: 12px;"></div>
+        </div>
+    </div>
+    @for (int i = 0; i < rows; i++)
+    {
+        <div class="d-flex gap-3 mb-3">
+            <div class="skeleton-box" style="width: 25%; height: 14px;"></div>
+            <div class="skeleton-box" style="width: 45%; height: 14px;"></div>
+            <div class="skeleton-box ms-auto" style="width: 15%; height: 14px;"></div>
+        </div>
+    }
+</div>

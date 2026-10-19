@@ -1,0 +1,35 @@
+@* 
+    _DataTable.cshtml
+    Tham số ViewData:
+    - TableTitle: string
+    - SearchPlaceholder: string
+    - CreateUrl: string
+    - CreateText: string
+*@
+@{
+    var title = ViewData["TableTitle"]?.ToString() ?? "Danh sách Dữ liệu";
+    var placeholder = ViewData["SearchPlaceholder"]?.ToString() ?? "Tìm kiếm nhanh...";
+    var createUrl = ViewData["CreateUrl"]?.ToString();
+    var createText = ViewData["CreateText"]?.ToString() ?? "Thêm mới";
+}
+
+<div class="card-enterprise shadow-sm rounded-4 overflow-hidden mb-4">
+    <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h5 class="fw-bold mb-0 text-primary-emphasis">@title</h5>
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="max-width: 260px;">
+                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0" id="tableFilterInput" placeholder="@placeholder" />
+            </div>
+            @if (!string.IsNullOrEmpty(createUrl))
+            {
+                <a href="@createUrl" class="btn btn-primary btn-sm px-3 rounded-pill btn-lift">
+                    <i class="bi bi-plus-lg me-1"></i> @createText
+                </a>
+            }
+        </div>
+    </div>
+    <div class="table-responsive">
+        @RenderBody()
+    </div>
+</div>

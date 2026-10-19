@@ -1,0 +1,194 @@
+@model List<KPI.Application.DTOs.EmailQueueDto>
+@{
+    ViewData["Title"] = "Nhật Ký Hàng Đợi Gửi Email Tự Động";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Nhật ký Email</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-envelope-paper-heart me-2 text-primary"></i>Nhật Ký Hàng Đợi Gửi Email (Email Queue Logs)
+            </h1>
+            <p class="text-secondary small mb-0">
+                Theo dõi toàn bộ email thông báo gửi tự động, trạng thái chuyển tiếp, số lần thử lại (Retry) và chi tiết thông điệp
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" onclick="location.reload();">
+                <i class="bi bi-arrow-clockwise me-1"></i>Làm Mới
+            </button>
+            <a href="/Dashboard" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i>Về Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-success shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Đã Gửi Thành Công</span>
+                    <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                </div>
+                <div class="display-6 fw-bold font-mono text-success my-1">
+                    @Model.Count(e => e.Status == KPI.Domain.Enums.EmailStatus.Sent)
+                </div>
+                <div class="small text-muted">Email đã gửi tới hộp thư cán bộ</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-warning shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Đang Chờ Xử Lý</span>
+                    <i class="bi bi-clock-history text-warning fs-4"></i>
+                </div>
+                <div class="display-6 fw-bold font-mono text-warning my-1">
+                    @Model.Count(e => e.Status == KPI.Domain.Enums.EmailStatus.Pending)
+                </div>
+                <div class="small text-muted">Trong hàng đợi gửi nền (Background Service)</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card-enterprise p-3 border-start border-4 border-danger shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small text-uppercase fw-semibold">Thất Bại (Sau 3 lần)</span>
+                    <i class="bi bi-exclamation-octagon-fill text-danger fs-4"></i>
+                </div>
+                <div class="display-6 fw-bold font-mono text-danger my-1">
+                    @Model.Count(e => e.Status == KPI.Domain.Enums.EmailStatus.Failed)
+                </div>
+                <div class="small text-muted">Lỗi kết nối SMTP hoặc địa chỉ không tồn tại</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN LOGS TABLE -->
+    <div class="card-enterprise p-4 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0">Danh Sách 50 Email Gần Nhất</h5>
+            <span class="badge bg-primary-subtle text-primary font-mono px-3 py-2 rounded-pill">
+                Tổng: @Model.Count bản ghi
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light small text-uppercase">
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Người nhận (To)</th>
+                        <th>Tiêu đề Email (Subject)</th>
+                        <th class="text-center" style="width: 140px;">Trạng thái</th>
+                        <th class="text-center" style="width: 90px;">Lần thử</th>
+                        <th style="width: 160px;">Thời gian tạo</th>
+                        <th style="width: 160px;">Thời gian gửi</th>
+                        <th class="text-center" style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="font-mono small text-muted">#@item.Id</td>
+                                <td class="font-mono small fw-semibold text-dark">
+                                    <i class="bi bi-envelope me-1 text-primary"></i>@item.ToEmail
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark text-truncate" style="max-width: 320px;">@item.Subject</div>
+                                    @if (!string.IsNullOrEmpty(item.ErrorMessage))
+                                    {
+                                        <div class="small text-danger text-truncate" style="max-width: 320px;" title="@item.ErrorMessage">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>@item.ErrorMessage
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @item.StatusBadgeClass px-2 py-1 rounded-pill">
+                                        @item.Status
+                                    </span>
+                                </td>
+                                <td class="text-center font-mono">
+                                    <span class="badge @(item.RetryCount >= 3 ? "bg-danger" : "bg-light text-dark")">
+                                        @item.RetryCount / 3
+                                    </span>
+                                </td>
+                                <td class="font-mono small text-secondary">
+                                    @item.ScheduledAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="font-mono small text-secondary">
+                                    @(item.SentAt.HasValue ? item.SentAt.Value.ToString("dd/MM/yyyy HH:mm") : "—")
+                                </td>
+                                <td class="text-center">
+                                    @if (item.Status != KPI.Domain.Enums.EmailStatus.Sent)
+                                    {
+                                        <button type="button" class="btn btn-outline-primary btn-xs rounded-pill px-2 py-1" onclick="retryEmail(@item.Id)" title="Gửi lại ngay">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Gửi lại
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success small"><i class="bi bi-check2-all"></i> Hoàn tất</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                                Hàng đợi email hiện đang trống. Chưa có thông báo email nào được ghi nhận.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function retryEmail(id) {
+        if (!confirm('Bạn có chắc chắn muốn đưa email #' + id + ' vào hàng đợi gửi lại?')) return;
+        
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('__RequestVerificationToken', token);
+
+        fetch('/Notification/RetryEmail', {
+            method: 'POST',
+            body: formData,
+            headers: { 'RequestVerificationToken': token }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                alert(res.message);
+                location.reload();
+            } else {
+                alert('Lỗi: ' + res.message);
+            }
+        })
+        .catch(err => alert('Lỗi kết nối: ' + err));
+    }
+</script>
+}

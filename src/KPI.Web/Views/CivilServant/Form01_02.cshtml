@@ -1,0 +1,361 @@
+@model KPI.Web.ViewModels.CivilServant.Form01_02ViewModel
+@{
+    var form = Model.Form;
+    var isLeadership = form.IsLeadership;
+    var formCode = isLeadership ? "MẪU SỐ 01" : "MẪU SỐ 02";
+    var formTitle = isLeadership 
+        ? "PHIẾU ĐÁNH GIÁ, XẾP LOẠI CHẤT LƯỢNG CÁN BỘ LÃNH ĐẠO, QUẢN LÝ" 
+        : "PHIẾU ĐÁNH GIÁ, XẾP LOẠI CHẤT LƯỢNG CÔNG CHỨC";
+    
+    ViewData["Title"] = $"{formCode} - {form.FullName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/CivilServant/Index?periodId=@form.PeriodId">Xếp Loại Công Chức</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@formCode</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge @(isLeadership ? "bg-warning text-dark" : "bg-primary") px-3 py-1 font-mono fs-6">
+                    @formCode
+                </span>
+                <h1 class="page-title text-gradient-primary mb-0">@formTitle</h1>
+            </div>
+            <p class="text-secondary small mb-0 mt-1">
+                Ban hành kèm theo <strong>Nghị định số 90/2020/NĐ-CP</strong> và sửa đổi bởi <strong>Nghị định số 48/2023/NĐ-CP</strong> của Chính phủ
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="/CivilServant/PrintForm?employeeId=@form.EmployeeId&periodId=@form.PeriodId" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-printer me-1"></i>In Mẫu A4 Quốc Gia
+            </a>
+            <a href="/CivilServant/Index?periodId=@form.PeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <!-- FORM SUBMISSION / INTERACTION CONTAINER -->
+    <div class="row g-4">
+        <!-- LEFT: FORM NGHỊ ĐỊNH 90 / 48 CHÍNH THỨC -->
+        <div class="col-lg-8">
+            <div class="card-enterprise p-4 mb-4">
+                <!-- Administrative National Header -->
+                <div class="row text-center mb-4 pb-3 border-bottom">
+                    <div class="col-6">
+                        <div class="small text-uppercase fw-semibold">HỌC VIỆN HÀNH CHÍNH QUỐC GIA</div>
+                        <div class="small fw-bold text-primary">@form.DepartmentName.ToUpper()</div>
+                        <div class="small text-muted font-mono" style="font-size: 11px;">Số hồ sơ: @form.CivilServantCode</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-uppercase fw-bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                        <div class="small text-uppercase fw-semibold" style="font-size: 12px; letter-spacing: 1px;">Độc lập - Tự do - Hạnh phúc</div>
+                        <div class="small text-muted" style="font-size: 11px;">Hà Nội, ngày @DateTime.Now.ToString("dd") tháng @DateTime.Now.ToString("MM") năm @DateTime.Now.ToString("yyyy")</div>
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <h4 class="fw-bold text-dark text-uppercase mb-1">@formTitle</h4>
+                    <div class="text-secondary small">Kỳ đánh giá: <strong>@form.PeriodName (Năm @form.Year)</strong></div>
+                </div>
+
+                <!-- SECTION I: THÔNG TIN CÁN BỘ CÔNG CHỨC -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-badge me-2"></i>I. THÔNG TIN CÁN BỘ, CÔNG CHỨC
+                    </h6>
+                    <div class="row g-3 small">
+                        <div class="col-md-6">
+                            <label class="text-secondary">Họ và tên:</label>
+                            <div class="fw-bold fs-6 text-dark">@form.FullName</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-secondary">Mã số công chức:</label>
+                            <div class="fw-semibold font-mono text-dark">@form.CivilServantCode</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-secondary">Ngày, tháng, năm sinh:</label>
+                            <div class="fw-semibold text-dark">@form.DateOfBirthFormatted</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-secondary">Chức vụ, chức danh:</label>
+                            <div class="fw-semibold text-dark">
+                                @form.PositionName 
+                                @if (isLeadership)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1" style="font-size: 10px;">Chức vụ Lãnh đạo</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-secondary">Ngạch công chức & Hệ số lương:</label>
+                            <div class="fw-semibold text-dark">@form.RankName &bull; HSL: <span class="font-mono">@form.SalaryCoefficient.ToString("F2")</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-secondary">Đảng viên:</label>
+                            <div class="fw-semibold text-dark">@form.PartyStatusName</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION II: CÁC TIÊU CHÍ ĐÁNH GIÁ (Nghị định 90 & 48) -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="fw-bold text-primary mb-0">
+                            <i class="bi bi-card-checklist me-2"></i>II. KẾT QUẢ ĐÁNH GIÁ THEO TIÊU CHÍ CHÍNH PHỦ
+                        </h6>
+                        <span class="small text-muted">Thang điểm 0 &ndash; 100</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle small mb-0">
+                            <thead class="table-light text-secondary text-uppercase" style="font-size: 11px;">
+                                <tr>
+                                    <th style="width: 40px;" class="text-center">STT</th>
+                                    <th>Nội dung tiêu chí thẩm định</th>
+                                    <th style="width: 90px;" class="text-center">Trọng số</th>
+                                    <th style="width: 140px;" class="text-center">Điểm đánh giá</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 1. Chính trị tư tưởng, phẩm chất đạo đức -->
+                                <tr>
+                                    <td class="text-center fw-bold">1</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">Chính trị tư tưởng, phẩm chất đạo đức, lối sống</div>
+                                        <div class="text-muted" style="font-size: 11px;">Chấp hành đường lối chủ trương của Đảng, pháp luật của Nhà nước; giữ gìn phẩm chất lối sống trong sạch, lành mạnh.</div>
+                                    </td>
+                                    <td class="text-center text-muted font-mono">15%</td>
+                                    <td class="text-center">
+                                        <input type="number" id="inputPoliticalEthics" class="form-control form-control-sm text-center font-mono fw-bold score-input" 
+                                               min="0" max="100" value="@form.PoliticalEthicsScore" @(Model.IsReadOnly ? "readonly" : "") />
+                                    </td>
+                                </tr>
+
+                                <!-- 2. Ý thức tổ chức kỷ luật, tác phong -->
+                                <tr>
+                                    <td class="text-center fw-bold">2</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">Tác phong, lề lối làm việc & Ý thức tổ chức kỷ luật</div>
+                                        <div class="text-muted" style="font-size: 11px;">Chấp hành sự phân công của tổ chức; quy chế văn hóa công vụ tại Học viện; không vi phạm thời giờ làm việc.</div>
+                                    </td>
+                                    <td class="text-center text-muted font-mono">15%</td>
+                                    <td class="text-center">
+                                        <input type="number" id="inputWorkDiscipline" class="form-control form-control-sm text-center font-mono fw-bold score-input" 
+                                               min="0" max="100" value="@form.WorkDisciplineScore" @(Model.IsReadOnly ? "readonly" : "") />
+                                    </td>
+                                </tr>
+
+                                <!-- 3. Kết quả KPI chức trách nhiệm vụ -->
+                                <tr>
+                                    <td class="text-center fw-bold">3</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">Kết quả thực hiện chức trách, nhiệm vụ được giao (Điểm KPI)</div>
+                                        <div class="text-muted" style="font-size: 11px;">Mức độ hoàn thành các chỉ tiêu công tác chuyên môn, giảng dạy, NCKH đã ký cam kết đầu kỳ.</div>
+                                    </td>
+                                    <td class="text-center text-muted font-mono">@(isLeadership ? "40%" : "55%")</td>
+                                    <td class="text-center">
+                                        <input type="number" id="inputDutyExecution" class="form-control form-control-sm text-center font-mono fw-bold text-primary score-input" 
+                                               min="0" max="100" value="@form.DutyExecutionScore" @(Model.IsReadOnly ? "readonly" : "") />
+                                    </td>
+                                </tr>
+
+                                <!-- 4. Năng lực lãnh đạo, quản lý (CHỈ DÀNH CHO MẪU 01) -->
+                                @if (isLeadership)
+                                {
+                                    <tr class="table-warning-subtle">
+                                        <td class="text-center fw-bold">4</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">Năng lực lãnh đạo, quản lý, điều hành đơn vị</div>
+                                            <div class="text-muted" style="font-size: 11px;">Tiêu chí chuyên biệt Mẫu 01: Năng lực tập hợp, quy tụ đoàn kết; tiến độ chỉ đạo điều hành công việc của đơn vị.</div>
+                                        </td>
+                                        <td class="text-center text-muted font-mono">15%</td>
+                                        <td class="text-center">
+                                            <input type="number" id="inputLeadershipCapacity" class="form-control form-control-sm text-center font-mono fw-bold score-input" 
+                                                   min="0" max="100" value="@form.LeadershipCapacityScore" @(Model.IsReadOnly ? "readonly" : "") />
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <input type="hidden" id="inputLeadershipCapacity" value="0" />
+                                }
+
+                                <!-- 5. Tinh thần đổi mới sáng tạo / Chuyển đổi số -->
+                                <tr>
+                                    <td class="text-center fw-bold">@(isLeadership ? "5" : "4")</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">Đổi mới sáng tạo, chuyển đổi số & Trách nhiệm nêu gương</div>
+                                        <div class="text-muted" style="font-size: 11px;">Tinh thần chủ động áp dụng công nghệ số, cải tiến quy trình nghiệp vụ hành chính công.</div>
+                                    </td>
+                                    <td class="text-center text-muted font-mono">15%</td>
+                                    <td class="text-center">
+                                        <input type="number" id="inputInnovation" class="form-control form-control-sm text-center font-mono fw-bold score-input" 
+                                               min="0" max="100" value="@form.InnovationScore" @(Model.IsReadOnly ? "readonly" : "") />
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end text-uppercase">Điểm Tổng Kết Tính Toán Tự Động:</th>
+                                    <th class="text-center font-mono fw-bold fs-5 text-primary" id="displayTotalScore">
+                                        @form.TotalCalculatedScore.ToString("F1")
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECTION III: Ý KIẾN TẬP THỂ & CẤP ỦY -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                        <i class="bi bi-chat-square-quote me-2"></i>III. Ý KIẾN CỦA TẬP THỂ VÀ CẤP ỦY
+                    </h6>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">
+                            1. Ý kiến nhận xét của tập thể cơ quan, đơn vị nơi công tác:
+                        </label>
+                        <textarea id="txtCollectiveComments" class="form-control small" rows="2" 
+                                  placeholder="Nhập tóm tắt ý kiến đóng góp của tập thể đơn vị..." @(Model.IsReadOnly ? "readonly" : "")>@form.CollectiveComments</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">
+                            2. Ý kiến của Chi ủy / Cấp ủy nơi công tác:
+                        </label>
+                        <textarea id="txtPartyOpinion" class="form-control small" rows="2" 
+                                  placeholder="Nhập ý kiến kết luận của Chi ủy/Cấp ủy..." @(Model.IsReadOnly ? "readonly" : "")>@form.PartyOpinion</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: BUSINESS RULES ENGINE & PHÊ DUYỆT -->
+        <div class="col-lg-4">
+            <!-- Panel Business Rules Control -->
+            <div class="card-enterprise p-4 mb-4">
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                    <i class="bi bi-gear-wide-connected me-2 text-primary"></i>Kiểm Tra Quy Tắc (BR Engine)
+                </h6>
+
+                <!-- BR-07: KỶ LUẬT (ĐIỂM LIỆT) -->
+                <div class="p-3 rounded-3 mb-3 @(form.HasDisciplinaryAction ? "bg-danger-subtle border border-danger" : "bg-light border")">
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" id="chkDisciplinaryAction" 
+                               @(form.HasDisciplinaryAction ? "checked" : "") @(Model.IsReadOnly ? "disabled" : "") />
+                        <label class="form-check-label fw-bold text-dark small" for="chkDisciplinaryAction">
+                            BR-07: Bị kỷ luật Đảng / Chính quyền
+                        </label>
+                    </div>
+                    <div class="small text-muted" style="font-size: 11px;">
+                        Nếu có kỷ luật trong năm: Áp dụng điểm liệt, bắt buộc hạ mức xếp loại về <strong>Không hoàn thành nhiệm vụ</strong>.
+                    </div>
+                    <div id="br07Alert" class="mt-2 @(form.HasDisciplinaryAction ? "" : "d-none")">
+                        <span class="badge bg-danger text-wrap text-start w-100 p-2" style="font-size: 11px;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>ĐÃ KÍCH HOẠT ĐIỂM LIỆT: Khóa không cho phép chọn Tốt hoặc Xuất sắc!
+                        </span>
+                    </div>
+                </div>
+
+                <!-- BR-08: SÁNG KIẾN CẢI TIẾN -->
+                <div class="p-3 rounded-3 mb-3 @(!form.HasApprovedInitiative ? "bg-warning-subtle border border-warning" : "bg-light border")">
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" id="chkApprovedInitiative" 
+                               @(form.HasApprovedInitiative ? "checked" : "") @(Model.IsReadOnly ? "disabled" : "") />
+                        <label class="form-check-label fw-bold text-dark small" for="chkApprovedInitiative">
+                            BR-08: Đề tài / Sáng kiến cải tiến
+                        </label>
+                    </div>
+                    <div class="small text-muted" style="font-size: 11px;">
+                        Điểm KPI &ge; 90 bắt buộc phải có đề tài/sáng kiến được Hội đồng nghiệm thu công nhận mới được xếp <strong>Xuất sắc</strong>.
+                    </div>
+                    <div id="br08Alert" class="mt-2 @(!form.HasApprovedInitiative ? "" : "d-none")">
+                        <span class="badge bg-warning text-dark text-wrap text-start w-100 p-2" style="font-size: 11px;">
+                            <i class="bi bi-info-circle-fill me-1"></i>THIẾU SÁNG KIẾN: Tự động hạ bậc về Hoàn thành tốt nhiệm vụ.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- BR-06: QUOTA STATUS -->
+                <div class="p-3 bg-light border rounded-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark small">BR-06: Khống chế trần 20%</span>
+                        <span class="badge bg-primary-subtle text-primary border" style="font-size: 10px;">Nghị định 90</span>
+                    </div>
+                    <div class="small text-secondary" style="font-size: 11px;">
+                        Tỷ lệ Hoàn thành xuất sắc nhiệm vụ không vượt quá 20% tổng số cán bộ Hoàn thành tốt trở lên.
+                    </div>
+                </div>
+
+                <!-- GỢI Ý & KẾT LUẬN XẾP LOẠI -->
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Mức đề xuất tự nhận xét:</label>
+                    <input type="text" id="txtProposedRank" class="form-control form-control-sm bg-light" 
+                           value="@form.ProposedRank" readonly />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-primary">
+                        <i class="bi bi-award-fill me-1"></i>KẾT LUẬN XẾP LOẠI CỦA CẤP CÓ THẨM QUYỀN:
+                    </label>
+                    <select id="selFinalizedRank" class="form-select fw-bold" @(Model.IsReadOnly ? "disabled" : "")>
+                        <option value="Hoàn thành xuất sắc nhiệm vụ" selected="@(form.FinalizedRank.Contains("xuất sắc", StringComparison.OrdinalIgnoreCase))">
+                            ⭐ Hoàn thành xuất sắc nhiệm vụ
+                        </option>
+                        <option value="Hoàn thành tốt nhiệm vụ" selected="@(form.FinalizedRank.Contains("tốt", StringComparison.OrdinalIgnoreCase))">
+                            ✓ Hoàn thành tốt nhiệm vụ
+                        </option>
+                        <option value="Hoàn thành nhiệm vụ" selected="@(form.FinalizedRank.Contains("hoàn thành nhiệm vụ", StringComparison.OrdinalIgnoreCase) && !form.FinalizedRank.Contains("tốt") && !form.FinalizedRank.Contains("xuất sắc") && !form.FinalizedRank.Contains("không"))">
+                            - Hoàn thành nhiệm vụ
+                        </option>
+                        <option value="Không hoàn thành nhiệm vụ" selected="@(form.FinalizedRank.Contains("không", StringComparison.OrdinalIgnoreCase))">
+                            ✗ Không hoàn thành nhiệm vụ
+                        </option>
+                    </select>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                @if (!Model.IsReadOnly)
+                {
+                    <button type="button" id="btnSaveClassification" class="btn btn-primary rounded-pill w-100 py-2 fw-semibold shadow-sm mb-2">
+                        <i class="bi bi-check2-circle me-1"></i>Lưu Đánh Giá & Phê Duyệt
+                    </button>
+                }
+                else
+                {
+                    <div class="alert alert-secondary text-center small p-2 mb-2">
+                        <i class="bi bi-lock-fill me-1"></i>Tài khoản hiện tại chỉ có quyền xem biểu mẫu.
+                    </div>
+                }
+
+                <a href="/CivilServant/PrintForm?employeeId=@form.EmployeeId&periodId=@form.PeriodId" target="_blank" 
+                   class="btn btn-outline-secondary rounded-pill w-100 py-2 small">
+                    <i class="bi bi-printer me-1"></i>Xem Bản In Khổ A4
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.formConfig = {
+        employeeId: @form.EmployeeId,
+        evaluationId: @(form.EvaluationId ?? 0),
+        periodId: @form.PeriodId,
+        isLeadership: @(isLeadership ? "true" : "false"),
+        isReadOnly: @(Model.IsReadOnly ? "true" : "false")
+    };
+</script>
+<script src="~/js/form-decree90.js"></script>

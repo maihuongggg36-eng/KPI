@@ -1,0 +1,243 @@
+@model KPI.Web.ViewModels.Evaluation.EvaluationDisputesViewModel
+@{
+    ViewData["Title"] = "Quản Lý Đơn Khiếu Nại Kết Quả Đánh Giá (BR-14)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var periods = ViewBag.Periods as List<KPI.Application.DTOs.EvaluationPeriodDetailDto> ?? new();
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Evaluation/DirectorList">Phê Duyệt KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Khiếu Nại Kết Quả</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-shield-shaded me-2 text-danger"></i>Hội Đồng Giải Quyết Khiếu Nại Đánh Giá (BR-14)
+            </h1>
+            <p class="text-secondary small mb-0">Tiếp nhận và thụ lý các đơn khiếu nại kết quả xếp loại trong thời hạn 72 giờ (03 ngày làm việc) kể từ khi công bố</p>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4">
+        <form method="get" action="/Evaluation/Disputes" class="row g-2 align-items-center">
+            <div class="col-md-6">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Tất cả các kỳ --</option>
+                    @foreach (var p in periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <a href="/Evaluation/Disputes" class="btn btn-outline-secondary btn-sm rounded-pill w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- DISPUTES TABLE -->
+    <div class="card-enterprise p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Người khiếu nại</th>
+                        <th>Lý do khiếu nại</th>
+                        <th>Đề xuất điều chỉnh</th>
+                        <th class="text-center">Thời gian nộp</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th style="width: 140px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Disputes.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-shield-check fs-2 d-block mb-2 text-success"></i>
+                                Không có đơn khiếu nại nào trong kỳ được chọn.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (int i = 0; i < Model.Disputes.Count; i++)
+                        {
+                            var item = Model.Disputes[i];
+                            var isOpen = item.Status == KPI.Domain.Enums.DisputeStatus.Open || item.Status == KPI.Domain.Enums.DisputeStatus.UnderReview;
+
+                            <tr>
+                                <td class="text-center font-mono text-muted">@(i + 1)</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.AppellantName</div>
+                                    <div class="small text-muted font-mono">Hồ sơ #@item.EvaluationId</div>
+                                </td>
+                                <td>
+                                    <div class="text-secondary small" style="max-width: 300px;">
+                                        @item.Reason
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-primary small">
+                                        @(string.IsNullOrEmpty(item.ProposedAdjustment) ? "Xem xét lại điểm" : item.ProposedAdjustment)
+                                    </div>
+                                </td>
+                                <td class="text-center small font-mono text-secondary">
+                                    @item.SubmittedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(item.Status == KPI.Domain.Enums.DisputeStatus.Open ? "bg-warning text-dark" : (item.Status == KPI.Domain.Enums.DisputeStatus.Resolved ? "bg-success" : "bg-danger")) rounded-pill px-2 py-1 small">
+                                        @item.StatusName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (isOpen)
+                                    {
+                                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="openResolveModal(@item.Id, '@item.AppellantName')">
+                                            <i class="bi bi-hammer me-1"></i>Thụ Lý
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-light btn-sm rounded-pill px-3 text-secondary" disabled>
+                                            <i class="bi bi-check me-1"></i>Đã Xử Lý
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: RESOLVE DISPUTE -->
+<div class="modal fade" id="resolveDisputeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-hammer text-primary me-2"></i>Giải Quyết Đơn Khiếu Nại
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Cán bộ khiếu nại:</label>
+                    <div class="fw-semibold text-dark fs-6" id="appellantNameDisplay">Họ và tên</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small fw-semibold">Kết luận của Hội đồng:</label>
+                    <select id="disputeDecisionSelect" class="form-select form-select-sm" onchange="toggleAdjustmentFields(this.value)">
+                        <option value="accept">Chấp thuận khiếu nại (Điều chỉnh kết quả)</option>
+                        <option value="reject">Bác đơn khiếu nại (Giữ nguyên kết quả)</option>
+                    </select>
+                </div>
+
+                <div id="adjustmentFields">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label text-secondary small">Điểm sau điều chỉnh:</label>
+                            <input type="number" step="0.1" id="adjustedScoreInput" class="form-control form-control-sm font-mono" placeholder="VD: 92.5" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-secondary small">Xếp loại sau điều chỉnh:</label>
+                            <select id="adjustedClassificationSelect" class="form-select form-select-sm">
+                                <option value="Hoàn thành xuất sắc nhiệm vụ">Hoàn thành xuất sắc nhiệm vụ</option>
+                                <option value="Hoàn thành tốt nhiệm vụ">Hoàn thành tốt nhiệm vụ</option>
+                                <option value="Hoàn thành nhiệm vụ">Hoàn thành nhiệm vụ</option>
+                                <option value="Không hoàn thành nhiệm vụ">Không hoàn thành nhiệm vụ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small fw-semibold">Biên bản / Căn cứ giải quyết:</label>
+                    <textarea id="resolutionNotesTextarea" class="form-control" rows="3" placeholder="Nhập căn cứ, quyết định của Hội đồng giải quyết khiếu nại..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="performResolveDispute()">
+                    <i class="bi bi-check2-circle me-1"></i>Ban Hành Quyết Định
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeDisputeId = null;
+
+    function openResolveModal(disputeId, appellantName) {
+        activeDisputeId = disputeId;
+        document.getElementById('appellantNameDisplay').textContent = appellantName;
+        const modal = new bootstrap.Modal(document.getElementById('resolveDisputeModal'));
+        modal.show();
+    }
+
+    function toggleAdjustmentFields(val) {
+        const fields = document.getElementById('adjustmentFields');
+        if (val === 'reject') {
+            fields.classList.add('d-none');
+        } else {
+            fields.classList.remove('d-none');
+        }
+    }
+
+    async function performResolveDispute() {
+        const isAccepted = document.getElementById('disputeDecisionSelect').value === 'accept';
+        const notes = document.getElementById('resolutionNotesTextarea').value.trim();
+
+        if (!notes) {
+            alert('Vui lòng nhập biên bản / căn cứ giải quyết.');
+            return;
+        }
+
+        const payload = {
+            disputeId: activeDisputeId,
+            isAccepted: isAccepted,
+            adjustedScore: isAccepted ? parseFloat(document.getElementById('adjustedScoreInput').value) || null : null,
+            adjustedClassification: isAccepted ? document.getElementById('adjustedClassificationSelect').value : null,
+            resolutionNotes: notes
+        };
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const response = await fetch('/Evaluation/ResolveDispute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                alert(res.message);
+                window.location.reload();
+            } else {
+                alert(res.message || 'Lỗi khi giải quyết khiếu nại');
+            }
+        } catch (err) {
+            alert('Lỗi kết nối: ' + err.message);
+        }
+    }
+</script>

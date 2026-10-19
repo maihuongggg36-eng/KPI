@@ -1,0 +1,377 @@
+@model KPI.Web.ViewModels.Evaluation.SelfAssessmentViewModel
+@{
+    ViewData["Title"] = "Phiếu Tự Đánh Giá KPI Cá Nhân";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var eval = Model.Evaluation;
+    var isReadOnly = Model.IsReadOnly;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/KpiPlanning/MyKpi">KPI Của Tôi</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tự Đánh Giá</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-ui-checks-grid me-2 text-primary"></i>Phiếu Tự Đánh Giá Hiệu Suất (Self-Assessment)
+            </h1>
+            <p class="text-secondary small mb-0">Cán bộ cập nhật số liệu thực hiện, tỷ lệ hoàn thành và đính kèm tài liệu minh chứng số hóa</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <!-- DEADLINE COUNTDOWN BADGE (BR-12) -->
+            <div class="card-enterprise px-3 py-2 d-flex align-items-center gap-2 border @(eval.IsSelfDeadlineExpired ? "border-danger bg-danger-subtle" : "border-warning bg-warning-subtle")">
+                <i class="bi @(eval.IsSelfDeadlineExpired ? "bi-exclamation-octagon-fill text-danger" : "bi-clock-history text-warning") fs-5"></i>
+                <div>
+                    <div class="small fw-bold @(eval.IsSelfDeadlineExpired ? "text-danger" : "text-dark")">
+                        @(eval.IsSelfDeadlineExpired ? "ĐÃ HẾT HẠN NỘP" : "HẠN CHÓT TỰ CHẤM (BR-12)")
+                    </div>
+                    <div class="font-mono small text-secondary">
+                        @eval.SelfDeadline.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATUS BADGE -->
+            <span class="badge @eval.StatusBadgeClass rounded-pill px-3 py-2 fs-6">
+                <i class="bi bi-circle-fill me-1 small"></i>@eval.StatusName
+            </span>
+        </div>
+    </div>
+
+    <!-- WORKFLOW TRACKER STEPPER -->
+    <div class="card-enterprise p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center position-relative my-2 px-md-4">
+            <div class="stepper-progress-track"></div>
+            
+            <!-- Step 1: Khởi tạo -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Not_Started ? "active" : "")">
+                <div class="stepper-icon"><i class="bi bi-clipboard2-plus"></i></div>
+                <div class="stepper-label">Khởi tạo</div>
+            </div>
+
+            <!-- Step 2: Tự đánh giá -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Self_Assessing ? "active" : "") @(eval.Status == KPI.Domain.Enums.EvaluationStatus.Self_Assessing ? "current" : "")">
+                <div class="stepper-icon"><i class="bi bi-pencil-square"></i></div>
+                <div class="stepper-label">Tự đánh giá</div>
+            </div>
+
+            <!-- Step 3: Đã nộp tự chấm -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Self_Submitted ? "active" : "") @(eval.Status == KPI.Domain.Enums.EvaluationStatus.Self_Submitted ? "current" : "")">
+                <div class="stepper-icon"><i class="bi bi-send-check"></i></div>
+                <div class="stepper-label">Đã nộp chấm</div>
+            </div>
+
+            <!-- Step 4: Quản lý thẩm định -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Manager_Reviewing ? "active" : "") @(eval.Status == KPI.Domain.Enums.EvaluationStatus.Manager_Reviewing ? "current" : "")">
+                <div class="stepper-icon"><i class="bi bi-person-check"></i></div>
+                <div class="stepper-label">QL Thẩm định</div>
+            </div>
+
+            <!-- Step 5: Chờ Lãnh đạo duyệt -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Pending_Director_Approval ? "active" : "") @(eval.Status == KPI.Domain.Enums.EvaluationStatus.Pending_Director_Approval ? "current" : "")">
+                <div class="stepper-icon"><i class="bi bi-award"></i></div>
+                <div class="stepper-label">Lãnh đạo duyệt</div>
+            </div>
+
+            <!-- Step 6: Hoàn tất & Khóa -->
+            <div class="stepper-node @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Final_Approved ? "active" : "") @(eval.Status >= KPI.Domain.Enums.EvaluationStatus.Final_Approved ? "current" : "")">
+                <div class="stepper-icon"><i class="bi bi-lock-fill"></i></div>
+                <div class="stepper-label">Hoàn tất & Khóa</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE & SUMMARY CARD -->
+    <div class="row g-3 mb-4">
+        <!-- Profile Info -->
+        <div class="col-lg-8">
+            <div class="card-enterprise p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="@eval.AvatarUrl" alt="@eval.EmployeeName" class="rounded-circle border border-2 border-primary" style="width: 56px; height: 56px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">@eval.EmployeeName <span class="badge bg-light text-secondary font-mono">@eval.EmployeeCode</span></h5>
+                        <div class="text-secondary small d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-briefcase me-1 text-primary"></i>@eval.PositionName</span>
+                            <span><i class="bi bi-building me-1 text-primary"></i>@eval.DepartmentName</span>
+                            <span><i class="bi bi-calendar3 me-1 text-primary"></i>@eval.PeriodName</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (isReadOnly)
+                {
+                    <div class="alert alert-info py-2 px-3 mb-0 mt-3 small d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill fs-5"></i>
+                        <div>Hồ sơ đã được gửi đi thẩm định hoặc đã khóa dữ liệu. Phiếu đang ở chế độ <strong>Xem thông tin (Chỉ đọc)</strong>.</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Grand Score Counter Card -->
+        <div class="col-lg-4">
+            <div class="card-enterprise p-3 h-100 bg-gradient-navy text-white text-center d-flex flex-column justify-content-center">
+                <div class="text-white-50 small text-uppercase tracking-wider">Tổng Điểm Tự Chấm (Thang 100)</div>
+                <div class="display-5 fw-bold font-mono my-1 text-warning" id="grandSelfScoreDisplay">@eval.SelfTotalScore.ToString("F1")</div>
+                <div class="progress rounded-pill bg-white-subtle" style="height: 8px;">
+                    <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" id="grandSelfProgressBar" style="width: @(Math.Min(100, (double)eval.SelfTotalScore))%;"></div>
+                </div>
+                <div class="small text-white-50 mt-2">
+                    <span id="evidenceWarningCount">0</span> chỉ tiêu đạt &ge; 120% cần minh chứng (BR-09)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN EVALUATION FORM TABLE -->
+    <div class="card-enterprise p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-list-check me-2 text-primary"></i>Chi Tiết Chỉ Tiêu Đánh Giá & Minh Chứng Số Hóa
+            </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                @eval.Details.Count Chỉ tiêu cam kết
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="selfAssessmentTable">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th style="min-width: 240px;">Chỉ tiêu KPI & Công thức</th>
+                        <th style="width: 100px;" class="text-center">Kế hoạch</th>
+                        <th style="width: 90px;" class="text-center">Trọng số</th>
+                        <th style="width: 130px;" class="text-center">Kết quả thực tế</th>
+                        <th style="width: 120px;" class="text-center">% Hoàn thành</th>
+                        <th style="width: 110px;" class="text-center">Điểm tạm tính</th>
+                        <th style="min-width: 200px;">Minh chứng (BR-09)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < eval.Details.Count; i++)
+                    {
+                        var d = eval.Details[i];
+                        <tr class="kpi-eval-row" 
+                            data-detail-id="@d.AssignmentDetailId"
+                            data-target="@d.TargetValue"
+                            data-weight="@d.Weight"
+                            data-maxcap="@d.MaxCap"
+                            data-formula="@d.ScoringFormula">
+                            <td class="text-center text-muted font-mono">@(i + 1)</td>
+                            <td>
+                                <div class="fw-semibold text-dark">@d.KpiName</div>
+                                <div class="small text-muted d-flex gap-2">
+                                    <span>ĐVT: <strong class="text-secondary">@d.Unit</strong></span>
+                                    <span>&bull;</span>
+                                    <span>Công thức: <span class="badge bg-light text-dark font-mono">@d.ScoringFormula</span></span>
+                                    <span>&bull;</span>
+                                    <span>Trần: <span class="font-mono">@d.MaxCap%</span></span>
+                                </div>
+                                <div class="mt-2">
+                                    <input type="text" 
+                                           class="form-control form-control-sm text-secondary bg-light-subtle self-remark-input" 
+                                           placeholder="Ghi chú, thuyết minh số liệu..." 
+                                           value="@d.SelfRemarks" 
+                                           @(isReadOnly ? "disabled" : "") />
+                                </div>
+                            </td>
+                            <td class="text-center font-mono fw-bold text-secondary">
+                                @d.TargetValue.ToString("N1")
+                            </td>
+                            <td class="text-center font-mono fw-bold text-primary">
+                                @d.Weight.ToString("N1")%
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       step="0.01" 
+                                       class="form-control form-control-sm text-center font-mono fw-bold actual-value-input @(isReadOnly ? "bg-light" : "")" 
+                                       value="@d.ActualValue" 
+                                       min="0"
+                                       @(isReadOnly ? "disabled" : "") />
+                            </td>
+                            <td class="text-center">
+                                <div class="font-mono fw-bold completion-rate-badge badge @(d.CompletionRate >= 120 ? "bg-warning text-dark border border-warning" : (d.CompletionRate >= 100 ? "bg-success-subtle text-success" : "bg-light text-secondary")) px-2 py-1">
+                                    <span class="rate-val">@d.CompletionRate.ToString("F1")</span>%
+                                </div>
+                                @if (d.CompletionRate >= 120)
+                                {
+                                    <div class="br09-alert-badge mt-1 text-danger small fw-bold" style="font-size: 11px;">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Vượt trần!
+                                    </div>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="font-mono fw-bold text-dark self-score-val">@d.SelfScore.ToString("F1")</span>
+                                <div class="text-muted small" style="font-size: 11px;">
+                                    Điểm: <span class="font-mono weighted-score-val">@(((d.SelfScore * d.Weight) / 100.0m).ToString("F1"))</span>
+                                </div>
+                            </td>
+                            <td>
+                                <!-- EVIDENCE LIST & UPLOAD ZONE -->
+                                <div class="evidence-container" id="evidenceList_@d.AssignmentDetailId">
+                                    @if (d.Evidences.Count > 0)
+                                    {
+                                        <div class="d-flex flex-column gap-1 mb-2">
+                                            @foreach (var ev in d.Evidences)
+                                            {
+                                                <div class="evidence-file-tag d-flex align-items-center justify-content-between p-1 px-2 rounded border bg-light-subtle small" id="evidenceItem_@ev.Id">
+                                                    <a href="@ev.FilePath" target="_blank" class="text-truncate text-primary text-decoration-none" style="max-width: 140px;" title="@ev.FileName">
+                                                        <i class="bi bi-file-earmark-check-fill me-1 text-success"></i>@ev.FileName
+                                                    </a>
+                                                    @if (!isReadOnly)
+                                                    {
+                                                        <button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="deleteEvidenceFile(@ev.Id, @d.AssignmentDetailId)">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (!isReadOnly)
+                                {
+                                    <button type="button" 
+                                            class="btn btn-outline-primary btn-sm rounded-pill w-100 upload-evidence-btn" 
+                                            onclick="openUploadModal(@d.AssignmentDetailId, '@d.KpiName')">
+                                        <i class="bi bi-cloud-arrow-up me-1"></i>Tải minh chứng
+                                    </button>
+                                }
+                                else if (d.Evidences.Count == 0)
+                                {
+                                    <span class="text-muted small fst-italic">Không có minh chứng</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- OVERALL REMARKS -->
+    <div class="card-enterprise p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-2">
+            <i class="bi bi-chat-left-text me-2 text-primary"></i>Bản Tự Nhận Xét, Đánh Giá Chung Của Cá Nhân
+        </h5>
+        <p class="text-secondary small mb-3">Tự đánh giá các ưu điểm nổi bật, kết quả các công việc đột xuất, khó khăn vướng mắc và kiến nghị đề xuất.</p>
+        <textarea id="overallRemarksTextarea" 
+                  class="form-control" 
+                  rows="4" 
+                  placeholder="Nhập nội dung tự nhận xét của cán bộ..." 
+                  @(isReadOnly ? "disabled" : "")>@eval.SelfRemarksOverall</textarea>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    @if (!isReadOnly)
+    {
+        <div class="card-enterprise p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <a href="/KpiPlanning/MyKpi" class="btn btn-light rounded-pill px-4">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại
+            </a>
+
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="btnSaveDraft" onclick="submitAssessment(true)">
+                    <i class="bi bi-save me-2"></i>Lưu Nháp
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnSubmitFinal" onclick="confirmSubmitFinal()">
+                    <i class="bi bi-send-check me-2"></i>Nộp Chính Thức Phiếu Tự Chấm
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- MODAL: UPLOAD EVIDENCE (DRAG & DROP) -->
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Đính Kèm Minh Chứng Số Hóa (BR-09)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Chỉ tiêu áp dụng:</label>
+                    <div class="fw-semibold text-dark" id="modalKpiNameDisplay">Tên chỉ tiêu</div>
+                </div>
+
+                <!-- DRAG & DROP ZONE -->
+                <div class="drop-zone p-4 text-center border border-2 border-dashed rounded-4 bg-light-subtle mb-3" id="evidenceDropZone">
+                    <i class="bi bi-cloud-arrow-up display-4 text-primary opacity-75"></i>
+                    <p class="mb-1 fw-bold text-dark">Kéo thả tệp vào đây hoặc nhấn để chọn</p>
+                    <p class="text-secondary small mb-0">Hỗ trợ PDF, DOCX, XLSX, Ảnh (PNG, JPG), ZIP &bull; Tối đa 25MB</p>
+                    <input type="file" id="evidenceFileInput" class="d-none" accept=".pdf,.docx,.doc,.xlsx,.xls,.png,.jpg,.jpeg,.zip,.rar" />
+                </div>
+
+                <div id="fileSelectedInfo" class="d-none alert alert-light border py-2 px-3 small d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-2 text-truncate">
+                        <i class="bi bi-file-earmark-check-fill text-success fs-5"></i>
+                        <span id="selectedFileNameDisplay" class="fw-semibold text-truncate">file.pdf</span>
+                        <span id="selectedFileSizeDisplay" class="text-muted font-mono">(0 KB)</span>
+                    </div>
+                    <button type="button" class="btn btn-link btn-sm text-danger p-0" onclick="clearSelectedFile()"><i class="bi bi-x-circle"></i></button>
+                </div>
+
+                <div class="mb-3">
+                    <label for="evidenceDescriptionInput" class="form-label text-secondary small">Thuyết minh minh chứng (Tùy chọn):</label>
+                    <input type="text" id="evidenceDescriptionInput" class="form-control form-control-sm" placeholder="VD: Quyết định khen thưởng số 12/QĐ-HV..." />
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" id="btnUploadEvidenceSubmit" onclick="performUploadEvidence()">
+                    <i class="bi bi-upload me-1"></i>Tải lên
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONFIRM SUBMIT FINAL -->
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary">
+                    <i class="bi bi-shield-check me-2"></i>Xác Nhận Nộp Phiếu Tự Đánh Giá
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-secondary">
+                <p>Bạn đang thực hiện nộp chính thức bản tự đánh giá cho kỳ <strong>@eval.PeriodName</strong> với tổng điểm tự chấm: <strong class="text-primary font-mono fs-5">@eval.SelfTotalScore.ToString("F1") điểm</strong>.</p>
+                <div class="alert alert-warning py-2 px-3 small mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <strong>Lưu ý:</strong> Sau khi nộp, hồ sơ sẽ được chuyển lên Quản lý trực tiếp để thẩm định. Bạn sẽ không thể sửa đổi số liệu tự chấm trừ khi được Quản lý trả lại.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="submitAssessment(false)">
+                    <i class="bi bi-check2-circle me-1"></i>Tôi Cam Đoan & Nộp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.evaluationData = {
+        evaluationId: @eval.Id,
+        assignmentId: @eval.AssignmentId,
+        isReadOnly: @(isReadOnly ? "true" : "false")
+    };
+</script>
+<script src="~/js/self-assessment.js"></script>

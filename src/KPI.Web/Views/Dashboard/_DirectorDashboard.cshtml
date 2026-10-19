@@ -1,0 +1,241 @@
+@model KPI.Application.DTOs.DirectorDashboardDto
+
+<!-- 1. Bộ 4 Thẻ Thống kê Chỉ số Tổng thể -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tổng Nhân sự Toàn viện", 
+            ["Value"] = Model.TotalEmployees.ToString(), 
+            ["Subtitle"] = "100% tài khoản định danh", 
+            ["Icon"] = "bi-people-fill", 
+            ["Color"] = "primary",
+            ["Trend"] = "+2 trong kỳ",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Chỉ tiêu KPI Đang giám sát", 
+            ["Value"] = Model.ActiveKpis.ToString(), 
+            ["Subtitle"] = "Chuẩn 4 viễn cảnh BSC", 
+            ["Icon"] = "bi-journal-check", 
+            ["Color"] = "info",
+            ["Trend"] = "100% trọng số",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tiến độ Hoàn thành TB", 
+            ["Value"] = $"{Model.AvgCompletionRate:N1}%", 
+            ["Subtitle"] = "Toàn bộ 5 đơn vị trực thuộc", 
+            ["Icon"] = "bi-speedometer2", 
+            ["Color"] = "success",
+            ["Trend"] = "+3.5% vs cùng kỳ",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Hồ sơ Chờ Giám đốc duyệt", 
+            ["Value"] = Model.PendingApprovals.ToString(), 
+            ["Subtitle"] = "Cần phê chuẩn kết luận", 
+            ["Icon"] = "bi-shield-fill-exclamation", 
+            ["Color"] = "warning",
+            ["Trend"] = "Ưu tiên xử lý",
+            ["TrendPositive"] = false
+        }' />
+    </div>
+</div>
+
+<!-- 2. Hàng biểu đồ 1: Radar Hiệu suất 5 Phòng ban & Donut Phân bổ Xếp loại -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-radar text-primary fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">So sánh Hiệu suất 5 Phòng ban (Radar Multi-Axis)</h6>
+                        <small class="text-secondary">Đánh giá đa chiều: Tiến độ, Chất lượng, Kỷ luật, Sáng tạo, Hài lòng</small>
+                    </div>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">ApexCharts</span>
+            </div>
+            <div class="p-3">
+                <div id="directorRadarChart" style="min-height: 360px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart-fill text-success fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Cơ cấu Xếp loại Cán bộ Công chức</h6>
+                        <small class="text-secondary">Áp dụng phân loại Nghị định 90/2020/NĐ-CP</small>
+                    </div>
+                </div>
+                <span class="badge bg-success-subtle text-success">Trần 20%</span>
+            </div>
+            <div class="p-3 d-flex flex-column justify-content-center">
+                <div id="directorDonutChart" style="min-height: 310px;"></div>
+                <div class="d-flex justify-content-around text-center pt-2 border-top mt-2">
+                    <div>
+                        <div class="fs-6 fw-bold text-success">1</div>
+                        <div class="text-secondary" style="font-size: 11px;">Xuất sắc (16.7%)</div>
+                    </div>
+                    <div>
+                        <div class="fs-6 fw-bold text-primary">4</div>
+                        <div class="text-secondary" style="font-size: 11px;">Tốt (66.7%)</div>
+                    </div>
+                    <div>
+                        <div class="fs-6 fw-bold text-warning">1</div>
+                        <div class="text-secondary" style="font-size: 11px;">Hoàn thành (16.7%)</div>
+                    </div>
+                    <div>
+                        <div class="fs-6 fw-bold text-danger">0</div>
+                        <div class="text-secondary" style="font-size: 11px;">KHTNV (0%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Hàng biểu đồ 2: Line Xu hướng 12 tháng & Bell Curve (Gauss) -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Xu hướng Điểm KPI Toàn viện 12 Tháng (Năm 2026)</h6>
+                        <small class="text-secondary">Điểm số trung bình thực tế so với mục tiêu đặt ra</small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-info-subtle text-info">Kỳ 2026</span>
+                </div>
+            </div>
+            <div class="p-3">
+                <div id="directorLineChart" style="min-height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-activity text-warning fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Đường cong Chuông Gauss (Bell Curve)</h6>
+                        <small class="text-secondary">So sánh Phân bổ Thực tế vs Chuẩn Gauss (15-70-10-5)</small>
+                    </div>
+                </div>
+                <span class="badge bg-warning-subtle text-warning">Chuẩn Gauss</span>
+            </div>
+            <div class="p-3">
+                <div id="directorGaussChart" style="min-height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Danh sách Hồ sơ Chờ Giám đốc Duyệt & Hoạt động Gần đây -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card-enterprise">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clipboard2-check-fill text-primary fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Danh sách Bản Đánh giá Cần Phê duyệt & Đóng băng Kết quả</h6>
+                        <small class="text-secondary">Lãnh đạo xem xét và phê chuẩn mức xếp loại công chức</small>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="exportDirectorReport()">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Xuất Báo cáo
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Cán bộ / Mã CB</th>
+                            <th>Đơn vị công tác</th>
+                            <th>Tự chấm</th>
+                            <th>Thẩm định</th>
+                            <th>Đề xuất xếp loại</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PendingApprovalItems)
+                        {
+                            <tr id="approval-row-@item.EvaluationId">
+                                <td>
+                                    <div class="fw-bold">@item.EmployeeName</div>
+                                    <div class="text-secondary font-mono small">@item.StaffCode • @item.PositionName</div>
+                                </td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">@item.DepartmentName</span></td>
+                                <td><span class="badge bg-primary-subtle text-primary font-mono fw-bold">@item.SelfScore.ToString("F1")</span></td>
+                                <td><span class="badge bg-success-subtle text-success font-mono fw-bold">@item.ManagerScore.ToString("F1")</span></td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">@item.ProposedRank</span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-success rounded-pill px-3 btn-lift" onclick="quickApprove(@item.EvaluationId, '@item.EmployeeName')">
+                                        <i class="bi bi-check-lg me-1"></i> Phê chuẩn
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Activity -->
+    <div class="col-lg-4">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-secondary fs-5"></i>
+                    <h6 class="fw-bold mb-0">Hoạt động Gần đây (Audit Events)</h6>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary small">Thời gian thực</span>
+            </div>
+            <div class="p-3">
+                <div class="timeline-activity">
+                    @foreach (var act in Model.RecentActivities)
+                    {
+                        <div class="d-flex gap-3 mb-3 pb-3 border-bottom position-relative">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" 
+                                 style="width: 36px; height: 36px; background: var(--color-@act.Type);">
+                                <i class="bi @act.Icon fs-6"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold small">@act.Title</div>
+                                <div class="text-secondary small" style="font-size: 11px;">
+                                    <i class="bi bi-person me-1"></i>@act.Actor • @act.Department
+                                </div>
+                                <div class="text-muted small" style="font-size: 10px;">
+                                    <i class="bi bi-clock me-1"></i>@act.ActionTime
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

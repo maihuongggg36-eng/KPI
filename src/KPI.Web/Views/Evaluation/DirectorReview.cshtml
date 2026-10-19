@@ -1,0 +1,383 @@
+@model KPI.Web.ViewModels.Evaluation.DirectorReviewViewModel
+@{
+    ViewData["Title"] = "Phê Duyệt Kết Quả Đánh Giá — Lãnh Đạo Viện";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var eval = Model.Evaluation;
+    var isLocked = eval.IsLocked || eval.Status == KPI.Domain.Enums.EvaluationStatus.Final_Approved || eval.Status == KPI.Domain.Enums.EvaluationStatus.Locked;
+    var suggestedScore = eval.ManagerTotalScore > 0 ? eval.ManagerTotalScore : eval.SelfTotalScore;
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Evaluation/DirectorList">Phê Duyệt KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Thẩm Tra & Phê Chuẩn</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-award-fill me-2 text-primary"></i>Phê Chuẩn Kết Quả Đánh Giá Hiệu Suất (BR-15)
+            </h1>
+            <p class="text-secondary small mb-0">Thẩm tra toàn diện điểm số, Gap Analysis, kiểm tra điều kiện Nghị định 90 và phê duyệt đóng băng dữ liệu</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            @if (eval.Status == KPI.Domain.Enums.EvaluationStatus.Final_Approved && eval.DisputeRemainingHours.HasValue)
+            {
+                <div class="card-enterprise px-3 py-1 border border-warning bg-warning-subtle small d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-warning fs-5"></i>
+                    <div>
+                        <div class="fw-bold text-dark">Thời hạn khiếu nại (BR-14)</div>
+                        <div class="font-mono text-danger">Còn @(eval.DisputeRemainingHours.Value.ToString("F1")) giờ</div>
+                    </div>
+                </div>
+            }
+
+            <span class="badge @eval.StatusBadgeClass rounded-pill px-3 py-2 fs-6">
+                <i class="bi bi-circle-fill me-1 small"></i>@eval.StatusName
+            </span>
+        </div>
+    </div>
+
+    <!-- PROFILE & SUMMARY CARD -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="card-enterprise p-3 h-100 d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="@eval.AvatarUrl" alt="" class="rounded-circle border border-2 border-primary" style="width: 56px; height: 56px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">@eval.EmployeeName <span class="badge bg-light text-secondary font-mono">@eval.EmployeeCode</span></h5>
+                        <div class="text-secondary small d-flex flex-wrap gap-3">
+                            <span><i class="bi bi-briefcase me-1 text-primary"></i>@eval.PositionName</span>
+                            <span><i class="bi bi-building me-1 text-primary"></i>@eval.DepartmentName</span>
+                            <span><i class="bi bi-calendar3 me-1 text-primary"></i>@eval.PeriodName</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-top d-flex justify-content-between text-secondary small">
+                    <span>Đánh giá 360&deg; Đồng nghiệp: <strong class="text-dark font-mono">@(eval.AveragePeerScore > 0 ? eval.AveragePeerScore.ToString("F1") + "/10" : "Chưa có")</strong></span>
+                    <span>Tỷ lệ hoàn thành TB: <strong class="text-primary font-mono">@(eval.Details.Any() ? eval.Details.Average(d => d.CompletionRate).ToString("F1") + "%" : "0%")</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card-enterprise p-3 h-100 bg-gradient-navy text-white d-flex flex-column justify-content-center text-center">
+                <div class="row g-2 align-items-center">
+                    <div class="col-4 border-end border-white-subtle">
+                        <div class="text-white-50 small text-uppercase">Tự Chấm</div>
+                        <div class="fs-2 fw-bold font-mono text-warning">@eval.SelfTotalScore.ToString("F1")</div>
+                    </div>
+                    <div class="col-4 border-end border-white-subtle">
+                        <div class="text-white-50 small text-uppercase">Quản Lý Chấm</div>
+                        <div class="fs-2 fw-bold font-mono text-info">@eval.ManagerTotalScore.ToString("F1")</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-white-50 small text-uppercase">Kết Luận Cuối</div>
+                        <div class="fs-2 fw-bold font-mono text-success" id="finalScoreDisplay">@(eval.FinalScore > 0 ? eval.FinalScore.ToString("F1") : suggestedScore.ToString("F1"))</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAP ANALYSIS CHART (APEXCHARTS) -->
+    <div class="card-enterprise p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-1">
+            <i class="bi bi-bar-chart-line me-2 text-primary"></i>Biểu Đồ Đối Chiếu Khoảng Cách Điểm (Gap Analysis)
+        </h5>
+        <p class="text-secondary small mb-3">So sánh trực quan mức độ chênh lệch giữa Cán bộ tự chấm và Quản lý phòng ban thẩm định từng chỉ tiêu</p>
+        <div id="gapAnalysisChart" style="min-height: 280px;"></div>
+    </div>
+
+    <!-- DETAIL ITEMS TABLE -->
+    <div class="card-enterprise p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-3">
+            <i class="bi bi-table me-2 text-primary"></i>Chi Tiết Điểm Từng Chỉ Tiêu & Giải Trình (BR-05)
+        </h5>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th style="width: 40px;" class="text-center">#</th>
+                        <th>Chỉ tiêu KPI</th>
+                        <th class="text-center">Trọng số</th>
+                        <th class="text-center">Thực tế / Kế hoạch</th>
+                        <th class="text-center text-primary">Tự chấm</th>
+                        <th class="text-center text-success">QL chấm</th>
+                        <th class="text-center">Độ lệch (Gap)</th>
+                        <th>Giải trình & Minh chứng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < eval.Details.Count; i++)
+                    {
+                        var d = eval.Details[i];
+                        var gap = Math.Abs(d.SelfScore - d.ManagerScore);
+                        var isGapOver10 = gap > 10.0m;
+
+                        <tr>
+                            <td class="text-center font-mono text-muted">@(i + 1)</td>
+                            <td>
+                                <div class="fw-semibold text-dark">@d.KpiName</div>
+                                <div class="small text-muted">ĐVT: @d.Unit &bull; MaxCap: @d.MaxCap%</div>
+                            </td>
+                            <td class="text-center font-mono fw-bold text-primary">@d.Weight.ToString("N1")%</td>
+                            <td class="text-center font-mono">
+                                <span class="fw-bold">@d.ActualValue.ToString("N1")</span> / @d.TargetValue.ToString("N1")
+                                <div class="small text-muted">(@d.CompletionRate.ToString("F1")%)</div>
+                            </td>
+                            <td class="text-center font-mono fw-bold text-primary">@d.SelfScore.ToString("F1")</td>
+                            <td class="text-center font-mono fw-bold text-success">@d.ManagerScore.ToString("F1")</td>
+                            <td class="text-center font-mono @(isGapOver10 ? "text-danger fw-bold" : "text-muted")">
+                                @gap.ToString("F1")
+                            </td>
+                            <td>
+                                @if (isGapOver10)
+                                {
+                                    <div class="p-2 rounded bg-danger-subtle text-danger small mb-1 border border-danger-subtle">
+                                        <strong><i class="bi bi-chat-quote-fill me-1"></i>Giải trình BR-05:</strong> @d.ScoreGapReason
+                                    </div>
+                                }
+                                @if (d.Evidences.Count > 0)
+                                {
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var ev in d.Evidences)
+                                        {
+                                            <a href="@ev.FilePath" target="_blank" class="badge bg-light text-primary border text-decoration-none small">
+                                                <i class="bi bi-paperclip me-1 text-success"></i>@ev.FileName
+                                            </a>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- NGHỊ ĐỊNH 90 CLASSIFICATION PANEL -->
+    <div class="card-enterprise p-4 mb-4 border-start border-4 border-primary">
+        <h5 class="fw-bold text-dark mb-2">
+            <i class="bi bi-shield-shaded me-2 text-primary"></i>Phân Loại Chất Lượng Cán Bộ Theo Nghị Định 90/2020/NĐ-CP
+        </h5>
+        <p class="text-secondary small mb-3">Kiểm soát các điều kiện pháp lý: Khống chế 20% Xuất sắc (BR-06), Điểm liệt kỷ luật (BR-07), Bắt buộc sáng kiến (BR-08)</p>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary fw-semibold">Điểm kết luận chính thức (Final Score):</label>
+                <input type="number" 
+                       id="finalScoreInput" 
+                       step="0.1" 
+                       class="form-control font-mono fw-bold text-success fs-5" 
+                       value="@(eval.FinalScore > 0 ? eval.FinalScore.ToString("F1") : suggestedScore.ToString("F1"))" 
+                       @(isLocked ? "disabled" : "") />
+            </div>
+
+            <div class="col-md-5">
+                <label class="form-label small text-secondary fw-semibold">Mức xếp loại chất lượng:</label>
+                <select id="finalClassificationSelect" class="form-select fw-semibold" @(isLocked ? "disabled" : "")>
+                    <option value="Hoàn thành xuất sắc nhiệm vụ" selected="@(eval.FinalClassification == "Hoàn thành xuất sắc nhiệm vụ" || Model.RecommendedRank == "Hoàn thành xuất sắc nhiệm vụ")">Hoàn thành xuất sắc nhiệm vụ</option>
+                    <option value="Hoàn thành tốt nhiệm vụ" selected="@(eval.FinalClassification == "Hoàn thành tốt nhiệm vụ" || Model.RecommendedRank == "Hoàn thành tốt nhiệm vụ")">Hoàn thành tốt nhiệm vụ</option>
+                    <option value="Hoàn thành nhiệm vụ" selected="@(eval.FinalClassification == "Hoàn thành nhiệm vụ" || Model.RecommendedRank == "Hoàn thành nhiệm vụ")">Hoàn thành nhiệm vụ</option>
+                    <option value="Không hoàn thành nhiệm vụ" selected="@(eval.FinalClassification == "Không hoàn thành nhiệm vụ" || Model.RecommendedRank == "Không hoàn thành nhiệm vụ")">Không hoàn thành nhiệm vụ</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="p-2 rounded bg-light border w-100 text-center small text-secondary">
+                    Gợi ý NĐ 90: <strong class="text-primary">@Model.RecommendedRank</strong>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label small text-secondary">Ý kiến chỉ đạo / Nhận xét của Lãnh đạo:</label>
+                <textarea id="directorRemarksInput" class="form-control" rows="2" placeholder="Ghi chú phê chuẩn kết quả đánh giá..." @(isLocked ? "disabled" : "")>@eval.DirectorRemarksOverall</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="card-enterprise p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <a href="/Evaluation/DirectorList" class="btn btn-light rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
+        </a>
+
+        @if (!isLocked)
+        {
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-danger rounded-pill px-4" onclick="openRejectModal()">
+                    <i class="bi bi-arrow-return-left me-2"></i>Yêu Cầu Quản Lý Rà Soát Lại
+                </button>
+                <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm" onclick="approveEvaluation()">
+                    <i class="bi bi-lock-fill me-2"></i>Phê Chuẩn Kết Quả & Khóa Dữ Liệu (BR-15)
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small fst-italic">
+                <i class="bi bi-lock-fill me-1 text-success"></i>Hồ sơ đã được phê duyệt chính thức và đóng băng bất biến (BR-15).
+            </div>
+        }
+    </div>
+</div>
+
+<!-- MODAL: REJECT TO MANAGER -->
+<div class="modal fade" id="rejectToManagerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-arrow-return-left me-2"></i>Yêu Cầu Rà Soát Lại Kết Quả Đánh Giá
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary small">Hồ sơ sẽ được chuyển ngược về trạng thái <strong>Quản lý đang thẩm định</strong> kèm ý kiến chỉ đạo của Lãnh đạo viện.</p>
+                <div class="mb-3">
+                    <label for="rejectReasonTextarea" class="form-label text-dark small fw-bold">Ý kiến chỉ đạo:</label>
+                    <textarea id="rejectReasonTextarea" class="form-control" rows="3" placeholder="Nhập lý do yêu cầu điều chỉnh lại điểm..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="performRejectToManager()">
+                    <i class="bi bi-send me-1"></i>Gửi Trả Lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    const chartCategories = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(eval.Details.Select(d => d.KpiName)));
+    const selfScores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(eval.Details.Select(d => (double)d.SelfScore)));
+    const mgrScores = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(eval.Details.Select(d => (double)d.ManagerScore)));
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const options = {
+            series: [
+                { name: 'Cán bộ tự chấm', data: selfScores },
+                { name: 'Quản lý thẩm định', data: mgrScores }
+            ],
+            chart: {
+                type: 'bar',
+                height: 300,
+                toolbar: { show: false }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '45%',
+                    borderRadius: 4
+                }
+            },
+            colors: ['#3b82f6', '#10b981'],
+            dataLabels: { enabled: false },
+            stroke: { show: true, width: 2, colors: ['transparent'] },
+            xaxis: {
+                categories: chartCategories,
+                labels: {
+                    rotate: -20,
+                    style: { fontSize: '11px' }
+                }
+            },
+            yaxis: {
+                title: { text: 'Điểm số (Thang 100/150)' },
+                max: 150
+            },
+            fill: { opacity: 1 },
+            tooltip: {
+                y: {
+                    formatter: function (val) { return val + " điểm"; }
+                }
+            }
+        };
+
+        const chart = new ApexCharts(document.querySelector("#gapAnalysisChart"), options);
+        chart.render();
+    });
+
+    async function approveEvaluation() {
+        if (!confirm('Xác nhận phê chuẩn kết quả đánh giá và đóng băng dữ liệu (BR-15)?')) return;
+
+        const payload = {
+            evaluationId: @eval.Id,
+            finalScore: parseFloat(document.getElementById('finalScoreInput').value) || 0,
+            finalClassification: document.getElementById('finalClassificationSelect').value,
+            remarks: document.getElementById('directorRemarksInput').value
+        };
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const response = await fetch('/Evaluation/Approve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                alert(res.message);
+                window.location.reload();
+            } else {
+                alert(res.message || 'Lỗi khi phê duyệt');
+            }
+        } catch (err) {
+            alert('Lỗi kết nối: ' + err.message);
+        }
+    }
+
+    function openRejectModal() {
+        const modal = new bootstrap.Modal(document.getElementById('rejectToManagerModal'));
+        modal.show();
+    }
+
+    async function performRejectToManager() {
+        const reason = document.getElementById('rejectReasonTextarea').value.trim();
+        if (!reason) {
+            alert('Vui lòng nhập ý kiến chỉ đạo trả lại.');
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const response = await fetch('/Evaluation/RejectToManager', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    evaluationId: @eval.Id,
+                    reason: reason
+                })
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                alert(res.message);
+                window.location.href = '/Evaluation/DirectorList';
+            } else {
+                alert(res.message || 'Lỗi trả hồ sơ');
+            }
+        } catch (err) {
+            alert('Lỗi kết nối: ' + err.message);
+        }
+    }
+</script>

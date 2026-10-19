@@ -1,0 +1,205 @@
+@model KPI.Application.DTOs.ManagerDashboardDto
+
+<!-- 1. Bộ 4 Thẻ Thống kê Trưởng phòng -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Nhân viên Đơn vị", 
+            ["Value"] = Model.DeptStaffCount.ToString(), 
+            ["Subtitle"] = Model.DepartmentName, 
+            ["Icon"] = "bi-people-fill", 
+            ["Color"] = "primary",
+            ["Trend"] = "100% đã giao KPI",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Chờ Chấm Thẩm định", 
+            ["Value"] = Model.PendingReviews.ToString(), 
+            ["Subtitle"] = "Nhân sự đã nộp tự chấm", 
+            ["Icon"] = "bi-pencil-square", 
+            ["Color"] = "warning",
+            ["Trend"] = "Cần chấm thẩm định",
+            ["TrendPositive"] = false
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Đã Hoàn tất Thẩm định", 
+            ["Value"] = Model.CompletedCount.ToString(), 
+            ["Subtitle"] = "Đã chuyển Giám đốc duyệt", 
+            ["Icon"] = "bi-check2-circle", 
+            ["Color"] = "success",
+            ["Trend"] = "66.7% tiến độ",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Hồ sơ Quá hạn", 
+            ["Value"] = Model.OverdueCount.ToString(), 
+            ["Subtitle"] = "Chậm tiến độ nộp báo cáo", 
+            ["Icon"] = "bi-alarm-fill", 
+            ["Color"] = "danger",
+            ["Trend"] = "0 vi phạm",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+</div>
+
+<!-- 2. Biểu đồ So sánh Điểm KPI & Bảng Xếp hạng Top Nhân viên -->
+<div class="row g-4 mb-4">
+    <!-- Biểu đồ Bar: So sánh điểm tự chấm vs điểm thẩm định -->
+    <div class="col-lg-7">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-fill text-primary fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">So sánh Điểm Tự chấm vs Điểm Thẩm định (Cấp Phòng)</h6>
+                        <small class="text-secondary">Theo dõi khoảng lệch điểm và tuân thủ BR-05 (giải trình khi lệch >10%)</small>
+                    </div>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">Biểu đồ Cột Kép</span>
+            </div>
+            <div class="p-3">
+                <div id="managerBarChart" style="min-height: 330px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng xếp hạng Top Nhân viên phòng -->
+    <div class="col-lg-5">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Bảng Xếp hạng Hiệu suất Đơn vị</h6>
+                        <small class="text-secondary">Thứ tự cán bộ dẫn đầu tiến độ và điểm số</small>
+                    </div>
+                </div>
+                <span class="badge bg-warning-subtle text-warning">Top Đơn vị</span>
+            </div>
+            <div class="p-3">
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var emp in Model.TopEmployees)
+                    {
+                        <div class="p-2 rounded-3 bg-surface-hover border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-dark rounded-circle" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">
+                                        @emp.Rank
+                                    </span>
+                                    <div>
+                                        <span class="fw-bold small">@emp.FullName</span>
+                                        <small class="text-secondary ms-1 font-mono">(@emp.StaffCode)</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-@emp.BadgeVariant-subtle text-@emp.BadgeVariant fw-bold">@emp.Classification</span>
+                                    <span class="fw-bold font-mono ms-1">@emp.Score.ToString("F1")</span>
+                                </div>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-@emp.BadgeVariant progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     style="width: @emp.ProgressRate%;" 
+                                     aria-valuenow="@emp.ProgressRate" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-secondary mt-1" style="font-size: 11px;">
+                                <span>Chức vụ: @emp.Position</span>
+                                <span>Tiến độ: @emp.ProgressRate%</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Danh sách Chờ Thẩm định & Calendar Heatmap Mật độ -->
+<div class="row g-4 mb-4">
+    <!-- Danh sách phiếu chờ thẩm định -->
+    <div class="col-lg-7">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-inbox-fill text-warning fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Hồ sơ Đánh giá Đang Chờ Trưởng phòng Chấm Thẩm định</h6>
+                        <small class="text-secondary">Rà soát minh chứng và nhập điểm thẩm định công tâm</small>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Cán bộ nộp</th>
+                            <th>Ngày nộp</th>
+                            <th>Điểm tự chấm</th>
+                            <th>Số tiêu chí</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var review in Model.PendingReviewItems)
+                        {
+                            <tr id="review-row-@review.EvaluationId">
+                                <td>
+                                    <div class="fw-bold">@review.EmployeeName</div>
+                                    <small class="text-secondary">Viên chức giảng dạy</small>
+                                </td>
+                                <td><span class="small font-mono">@review.SubmissionDate</span></td>
+                                <td><span class="badge bg-primary-subtle text-primary font-mono fw-bold">@review.SelfScore.ToString("F1")</span></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">@review.TaskCount chỉ tiêu</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3 btn-lift" onclick="quickReview(@review.EvaluationId, '@review.EmployeeName')">
+                                        <i class="bi bi-pencil-square me-1"></i> Chấm điểm
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Heatmap -->
+    <div class="col-lg-5">
+        <div class="card-enterprise h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-week-fill text-info fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Mật độ Hoàn thành Nhiệm vụ (30 Ngày)</h6>
+                        <small class="text-secondary">Tần suất nộp minh chứng và cập nhật tiến độ công tác</small>
+                    </div>
+                </div>
+                <span class="badge bg-info-subtle text-info">Heatmap</span>
+            </div>
+            <div class="p-3">
+                <div id="managerHeatmapChart" style="min-height: 220px;"></div>
+                <div class="d-flex align-items-center justify-content-between text-secondary pt-2 border-top mt-2" style="font-size: 11px;">
+                    <span>Ít hoạt động</span>
+                    <div class="d-flex gap-1 align-items-center">
+                        <span style="width: 12px; height: 12px; background: #e2e8f0; border-radius: 2px;"></span>
+                        <span style="width: 12px; height: 12px; background: #93c5fd; border-radius: 2px;"></span>
+                        <span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></span>
+                        <span style="width: 12px; height: 12px; background: #1d4ed8; border-radius: 2px;"></span>
+                    </div>
+                    <span>Nhiều hoạt động</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

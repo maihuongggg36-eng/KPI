@@ -1,0 +1,161 @@
+@model KPI.Web.ViewModels.Report.GaussAnalysisViewModel
+@{
+    ViewData["Title"] = "Phân Tích Chuông Gauss & Kiểm Soát Trần 20%";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var g = Model.Gauss;
+    var f = Model.Filter;
+}
+
+<div class="content-body pb-5">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Report/Index?periodId=@f.PeriodId">Báo cáo</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Phân tích Gauss</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-bell-fill me-2 text-info"></i>Phân Tích Chuông Gauss & Kiểm Soát Trần Xếp Loại
+            </h1>
+            <p class="text-secondary small mb-0">
+                Đối chiếu phân phối xếp loại thực tế với đường cong phân phối chuẩn lý tưởng và kiểm soát tỷ lệ 20%
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="/Report/ExportPdf?periodId=@f.PeriodId" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF
+            </a>
+            <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>In A4
+            </button>
+            <a href="/Report/Index?periodId=@f.PeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Về Báo Cáo
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-enterprise p-3 mb-4 no-print">
+        <form method="get" action="/Report/Gauss" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="PeriodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == f.PeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="DepartmentIds" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Toàn cơ quan Học viện --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(f.DepartmentIds != null && f.DepartmentIds.Contains(d.Id))">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill w-100">
+                    <i class="bi bi-filter me-1"></i>Lọc Dữ Liệu
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- MAIN GAUSS CHART -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card-enterprise p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-graph-up me-2 text-primary"></i>Biểu Đồ Chuông Gauss: Thực Tế vs Lý Tưởng
+                        </h5>
+                        <div class="text-muted small">Điểm trung bình &mu; = @g.Mean | Độ lệch chuẩn &sigma; = @g.StdDev</div>
+                    </div>
+                    <span class="badge @(g.IsCompliant ? "bg-success" : "bg-danger") font-mono px-3 py-2 rounded-pill">
+                        @(g.IsCompliant ? "✅ ĐẠT CHUẨN GAUSS" : "⚠️ LỆCH TRẦN 20%")
+                    </span>
+                </div>
+                <div id="chartDedicatedGauss" style="min-height: 400px;"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card-enterprise p-4 h-100">
+                <h5 class="fw-bold text-dark mb-3">
+                    <i class="bi bi-pie-chart-fill me-2 text-warning"></i>Tỷ Lệ Băng Điểm
+                </h5>
+
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var band in g.Bands)
+                    {
+                        <div class="p-3 rounded-3 border @(band.IsCompliant ? "border-success-subtle bg-light" : "border-danger-subtle bg-danger-subtle")">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark">@band.BandName</span>
+                                <span class="badge @(band.IsCompliant ? "bg-success" : "bg-danger") font-mono">@band.ActualPercentage%</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                <span>Thực tế: <strong>@band.ActualCount CB</strong></span>
+                                <span>Chuẩn: <strong>@band.IdealPercentage%</strong></span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar @(band.BandCode == "EXCELLENT" ? "bg-warning" : (band.BandCode == "GOOD" ? "bg-success" : "bg-primary"))"
+                                     style="width: @band.ActualPercentage%"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const bands = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(g.Bands));
+        const curvePoints = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(g.IdealCurvePoints));
+
+        const categories = bands.map(b => b.BandName);
+        const actualPercents = bands.map(b => b.ActualPercentage);
+        const idealPercents = bands.map(b => b.IdealPercentage);
+
+        const options = {
+            series: [
+                { name: 'Phân bổ thực tế (%)', type: 'column', data: actualPercents },
+                { name: 'Chuẩn lý tưởng (%)', type: 'line', data: idealPercents }
+            ],
+            chart: {
+                height: 400,
+                type: 'line',
+                toolbar: { show: false },
+                fontFamily: 'Inter, sans-serif'
+            },
+            stroke: { width: [0, 4], curve: 'smooth' },
+            plotOptions: {
+                bar: { columnWidth: '40%', borderRadius: 8 }
+            },
+            colors: ['#3b82f6', '#f59e0b'],
+            xaxis: { categories: categories },
+            yaxis: {
+                title: { text: 'Tỷ lệ phần trăm (%)' },
+                labels: { formatter: val => val.toFixed(1) + '%' }
+            },
+            tooltip: {
+                y: { formatter: val => val.toFixed(1) + '%' }
+            },
+            legend: { position: 'top', horizontalAlign: 'right' }
+        };
+
+        const chartEl = document.querySelector("#chartDedicatedGauss");
+        if (chartEl) {
+            new ApexCharts(chartEl, options).render();
+        }
+    });
+</script>

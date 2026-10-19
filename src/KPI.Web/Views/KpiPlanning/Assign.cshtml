@@ -1,0 +1,384 @@
+@model KPI.Web.ViewModels.Planning.AssignKpiViewModel
+@{
+    ViewData["Title"] = "Giao Chỉ Tiêu KPI Cá Nhân — Wizard Lập Kế Hoạch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isEdit = Model.ExistingAssignment != null;
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/KpiPlanning/Approvals">Kế hoạch KPI</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@(isEdit ? "Cập nhật bản giao" : "Giao chỉ tiêu mới")</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-bullseye me-2 text-primary"></i>Giao Chỉ Tiêu KPI Cá Nhân (Planning Wizard)
+            </h1>
+            <p class="text-secondary small mb-0">Thiết lập mục tiêu công việc, phân bổ trọng số theo chuẩn BR-01 & BR-02 cho cán bộ, nhân viên</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/KpiPlanning/Approvals" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Danh sách bản giao
+            </a>
+            <button type="button" class="btn btn-primary rounded-pill px-3" onclick="openKpiBankDrawer()">
+                <i class="bi bi-box-arrow-in-down me-1"></i>Ngân hàng KPI (@Model.MasterKpis.Count)
+            </button>
+        </div>
+    </div>
+
+    <!-- WIZARD STEP HEADER -->
+    <div class="card-enterprise mb-4">
+        <div class="p-4">
+            <div class="wizard-steps-container">
+                <div class="wizard-step active" id="step-node-1" onclick="goToStep(1)">
+                    <div class="step-circle"><i class="bi bi-person-badge"></i></div>
+                    <div class="step-label">Bước 1: Chọn Nhân sự & Kỳ</div>
+                </div>
+                <div class="wizard-line" id="line-1-2"></div>
+                <div class="wizard-step" id="step-node-2" onclick="goToStep(2)">
+                    <div class="step-circle"><i class="bi bi-sliders"></i></div>
+                    <div class="step-label">Bước 2: Thiết lập Target & Trọng số</div>
+                </div>
+                <div class="wizard-line" id="line-2-3"></div>
+                <div class="wizard-step" id="step-node-3" onclick="goToStep(3)">
+                    <div class="step-circle"><i class="bi bi-check2-circle"></i></div>
+                    <div class="step-label">Bước 3: Xem lại & Gửi cam kết</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIZARD STEP 1: CHỌN NHÂN VIÊN & KỲ ĐÁNH GIÁ -->
+    <div class="wizard-step-content" id="step-content-1">
+        <div class="card-enterprise p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-primary-emphasis">
+                <i class="bi bi-person-check-fill me-2 text-primary"></i>1. Lựa chọn Nhân viên & Kỳ Đánh giá Áp dụng
+            </h5>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nhân viên / Cán bộ nhận chỉ tiêu <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-lg" id="select-employee" onchange="onEmployeeChanged(this.value)">
+                        <option value="">-- Chọn nhân sự trực thuộc --</option>
+                        @foreach (var emp in Model.Employees)
+                        {
+                            var selected = Model.SelectedEmployeeId == emp.EmployeeId ? "selected" : "";
+                            <option value="@emp.EmployeeId" data-dept="@emp.DepartmentName" data-pos="@emp.PositionName" data-code="@emp.StaffCode">
+                                @emp.FullName (@emp.StaffCode) — @emp.PositionName [@emp.DepartmentName]
+                            </option>
+                        }
+                    </select>
+                    <div class="form-text">Danh sách chỉ hiển thị nhân sự thuộc phòng ban quản lý theo phân quyền BCE.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kỳ đánh giá hiệu suất <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-lg" id="select-period">
+                        @foreach (var p in Model.Periods)
+                        {
+                            var selected = Model.SelectedPeriodId == p.Id ? "selected" : "";
+                            <option value="@p.Id" selected="@(Model.SelectedPeriodId == p.Id)">
+                                @p.Name (Năm @p.Year) — [@p.Status]
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Tiêu đề bản giao KPI</label>
+                    <input type="text" class="form-control" id="input-assignment-title" 
+                           value="@(Model.ExistingAssignment?.Title ?? "Kế hoạch mục tiêu KPI năm 2026")" 
+                           placeholder="Ví dụ: Kế hoạch giao chỉ tiêu KPI quý 1/2026 - Phòng Kế hoạch Tài chính" />
+                </div>
+            </div>
+
+            <!-- CARD THÔNG TIN NHÂN VIÊN ĐƯỢC CHỌN & TEMPLATE SUGGESTION -->
+            <div class="mt-4 p-3 rounded-3 bg-light-subtle border d-none" id="emp-profile-card">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar-circle-lg bg-primary text-white fs-4 fw-bold" id="emp-avatar">NV</div>
+                        <div>
+                            <h6 class="fw-bold mb-1" id="emp-name-display">Nguyễn Văn A</h6>
+                            <div class="text-secondary small">
+                                <span class="badge bg-dark me-2" id="emp-code-display">CB-001</span>
+                                <span id="emp-pos-display">Chuyên viên chính</span> • <span id="emp-dept-display">Phòng KHTC</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" id="template-action-area">
+                        <button type="button" class="btn btn-warning rounded-pill px-3 text-dark fw-bold" id="btn-load-template" onclick="loadSuggestedTemplate()">
+                            <i class="bi bi-magic me-1"></i>Nạp bộ mẫu gợi ý theo chức danh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-primary btn-lg rounded-pill px-4" onclick="validateStep1AndNext()">
+                Tiếp tục: Thiết lập chỉ tiêu <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- WIZARD STEP 2: THIẾT LẬP TARGET & TRỌNG SỐ (DRAG & DROP + BR-01 + BR-02) -->
+    <div class="wizard-step-content d-none" id="step-content-2">
+        <!-- BR-01 MONITOR PROGRESS BAR -->
+        <div class="card-enterprise mb-4 sticky-top bg-surface shadow-sm" style="top: 80px; z-index: 1010;">
+            <div class="p-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary-subtle text-primary font-mono fw-bold px-2 py-1">BR-01 CHECK</span>
+                        <span class="fw-bold small text-secondary">TỔNG TRỌNG SỐ YÊU CẦU: <strong class="text-dark">100.00%</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="small text-muted" id="item-count-badge">0 chỉ tiêu</span>
+                        <div class="fs-5 fw-bold font-mono" id="total-weight-display">0.00%</div>
+                    </div>
+                </div>
+                <div class="progress progress-enterprise" style="height: 12px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" 
+                         id="weight-progress-bar" role="progressbar" style="width: 0%;"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 small">
+                    <span class="text-danger" id="br-01-alert"><i class="bi bi-exclamation-triangle-fill me-1"></i>Chưa đạt 100%. Vui lòng điều chỉnh trọng số.</span>
+                    <span class="text-muted"><i class="bi bi-shield-check me-1"></i>BR-02: Mỗi chỉ tiêu từ <strong>5% đến 50%</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- BẢNG BẢN GIAO KPI CHÍNH (DROP ZONE) -->
+            <div class="col-lg-8">
+                <div class="card-enterprise">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-primary-emphasis">
+                            <i class="bi bi-list-check me-2 text-primary"></i>Danh sách Chỉ tiêu Bản giao (Kéo thả từ Ngân hàng)
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="openKpiBankDrawer()">
+                            <i class="bi bi-plus-lg me-1"></i>Chọn từ Ngân hàng KPI
+                        </button>
+                    </div>
+
+                    <!-- DROP ZONE CONTAINER -->
+                    <div class="p-3" id="kpi-drop-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+                        <div class="empty-drop-zone text-center py-5 border-dashed rounded-3" id="empty-kpi-placeholder">
+                            <i class="bi bi-inbox text-secondary display-4 opacity-50 mb-3"></i>
+                            <h6 class="fw-bold text-secondary">Chưa có chỉ tiêu nào được thêm vào bản giao</h6>
+                            <p class="small text-muted mb-3">Kéo chỉ tiêu từ bảng bên phải vào đây hoặc bấm "Nạp bộ mẫu" ở Bước 1</p>
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="openKpiBankDrawer()">
+                                <i class="bi bi-search me-1"></i>Duyệt Ngân hàng KPI
+                            </button>
+                        </div>
+
+                        <!-- DANH SÁCH KPI ITEMS ĐƯỢC CHỌN -->
+                        <div id="assigned-items-list" class="d-flex flex-column gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BẢNG NHANH NGÂN HÀNG KPI ĐỂ KÉO THẢ (SIDEBAR BANK) -->
+            <div class="col-lg-4">
+                <div class="card-enterprise sticky-top" style="top: 190px;">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-bank me-2 text-primary"></i>Ngân hàng KPI (Kéo thả)</h6>
+                        <span class="badge bg-secondary font-mono">@Model.MasterKpis.Count</span>
+                    </div>
+                    <div class="p-2 border-bottom">
+                        <input type="text" class="form-control form-control-sm" id="search-kpi-bank" placeholder="Tìm kiếm nhanh mã/tên KPI..." onkeyup="filterKpiBankList(this.value)">
+                    </div>
+                    <div class="p-2 overflow-auto" style="max-height: 480px;" id="draggable-kpi-list">
+                        @foreach (var kpi in Model.MasterKpis)
+                        {
+                            <div class="kpi-draggable-card p-2 mb-2 rounded-2 border bg-surface shadow-xs" 
+                                 draggable="true" 
+                                 ondragstart="onDragStart(event)"
+                                 data-id="@kpi.Id"
+                                 data-code="@kpi.Code"
+                                 data-name="@kpi.Name"
+                                 data-unit="@kpi.UnitName"
+                                 data-formula="@kpi.ScoringFormula"
+                                 data-perspective="@kpi.Perspective">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <span class="badge bg-dark font-mono small">@kpi.Code</span>
+                                    <span class="badge bg-info-subtle text-info font-mono small">@kpi.UnitName</span>
+                                </div>
+                                <div class="fw-semibold small mt-1 text-truncate" title="@kpi.Name">@kpi.Name</div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-light-subtle small">
+                                    <span class="text-muted" style="font-size: 0.75rem;">@kpi.Perspective</span>
+                                    <button type="button" class="btn btn-xs btn-outline-primary rounded-pill" onclick="addKpiDirectly(@kpi.Id)">
+                                        <i class="bi bi-plus"></i> Thêm
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER ĐIỀU HƯỚNG BƯỚC 2 -->
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(1)">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại Bước 1
+            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-secondary rounded-pill px-3" onclick="saveAsDraft()">
+                    <i class="bi bi-save me-1"></i>Lưu bản nháp
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="validateStep2AndNext()">
+                    Tiếp tục: Xem lại & Gửi <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIZARD STEP 3: REVIEW & GỬI CAM KẾT (SUMMARY & PIE CHART) -->
+    <div class="wizard-step-content d-none" id="step-content-3">
+        <div class="card-enterprise p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-primary-emphasis">
+                <i class="bi bi-clipboard-check-fill me-2 text-primary"></i>3. Tổng hợp Xem lại & Phê duyệt Gửi Cam kết
+            </h5>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 bg-light-subtle border">
+                        <div class="text-secondary small">Cán bộ nhận chỉ tiêu</div>
+                        <h6 class="fw-bold mb-0 text-dark" id="review-emp-name">--</h6>
+                        <div class="small text-muted" id="review-emp-pos">--</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 bg-light-subtle border">
+                        <div class="text-secondary small">Kỳ đánh giá</div>
+                        <h6 class="fw-bold mb-0 text-dark" id="review-period-name">--</h6>
+                        <div class="small text-muted" id="review-assignment-title">--</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 bg-success-subtle border border-success-subtle">
+                        <div class="text-success small fw-semibold">Tổng trọng số bản giao (BR-01)</div>
+                        <h4 class="fw-bold mb-0 text-success font-mono" id="review-total-weight">100.00%</h4>
+                        <div class="small text-success"><i class="bi bi-check-circle-fill me-1"></i>Đạt chuẩn 100.00%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- BẢNG TỔNG HỢP REVIEW -->
+                <div class="col-lg-7">
+                    <div class="table-responsive">
+                        <table class="table-enterprise">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Chỉ tiêu KPI</th>
+                                    <th>Mục tiêu (Target)</th>
+                                    <th>Trọng số (BR-02)</th>
+                                    <th>Công thức</th>
+                                </tr>
+                            </thead>
+                            <tbody id="review-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BIỂU ĐỒ TRÒN PHÂN BỔ TRỌNG SỐ -->
+                <div class="col-lg-5">
+                    <div class="p-3 rounded-3 border bg-surface text-center">
+                        <h6 class="fw-bold mb-2">Phân bổ Trọng số Chỉ tiêu (%)</h6>
+                        <div id="chart-weight-distribution" style="min-height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER ĐIỀU HƯỚNG BƯỚC 3 -->
+        <div class="d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="goToStep(2)">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại Bước 2
+            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-secondary rounded-pill px-3" onclick="saveAsDraft()">
+                    <i class="bi bi-save me-1"></i>Lưu bản nháp
+                </button>
+                <button type="button" class="btn btn-success btn-lg rounded-pill px-4 fw-bold" onclick="submitKpiAssignment()">
+                    <i class="bi bi-send-check me-2"></i>Gửi Cam Kết Mục Tiêu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OFF-CANVAS / MODAL: NGÂN HÀNG KPI CHUẨN ĐẦY ĐỦ -->
+<div class="modal fade" id="modalKpiBankDrawer" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold"><i class="bi bi-bank me-2 text-primary"></i>Ngân Hàng Chỉ Tiêu KPI Chuẩn Hóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="modal-search-kpi" placeholder="Tìm kiếm theo mã, tên chỉ tiêu..." onkeyup="filterModalKpiList(this.value)">
+                </div>
+                <div class="table-responsive">
+                    <table class="table-enterprise">
+                        <thead>
+                            <tr>
+                                <th>Mã KPI</th>
+                                <th>Tên Chỉ Tiêu</th>
+                                <th>Viễn Cảnh BSC</th>
+                                <th>Đơn Vị Tính</th>
+                                <th>Công Thức</th>
+                                <th class="text-end">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-kpi-table-body">
+                            @foreach (var kpi in Model.MasterKpis)
+                            {
+                                <tr class="modal-kpi-row" data-id="@kpi.Id" data-code="@kpi.Code" data-name="@kpi.Name">
+                                    <td><span class="badge bg-dark font-mono">@kpi.Code</span></td>
+                                    <td class="fw-bold">@kpi.Name</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary">@kpi.Perspective</span></td>
+                                    <td>@kpi.UnitName</td>
+                                    <td><span class="badge bg-info-subtle text-info">@kpi.ScoringFormula</span></td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="addKpiDirectly(@kpi.Id); showToast('Đã thêm KPI @kpi.Code vào bản giao!')">
+                                            <i class="bi bi-plus-lg me-1"></i>Thêm vào bản giao
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="~/js/kpi-planning.js" asp-append-version="true"></script>
+    <script>
+        // Seed dữ liệu hiện có nếu là Sửa bản nháp
+        @if (Model.ExistingAssignment != null)
+        {
+            <text>
+            document.addEventListener("DOMContentLoaded", function () {
+                window.existingAssignmentData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ExistingAssignment));
+                loadExistingAssignment(window.existingAssignmentData);
+            });
+            </text>
+        }
+    </script>
+}

@@ -1,0 +1,425 @@
+@model KPI.Web.ViewModels.Payroll.MyPayslipViewModel
+@{
+    ViewData["Title"] = "Phiếu Lương Cá Nhân (3P Payslip)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var p = Model.Payslip;
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Payroll/Index">Lương 3P</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Phiếu Lương Cá Nhân</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-file-earmark-person-fill me-2 text-primary"></i>Phiếu Lương Cá Nhân (3P Performance Payslip)
+            </h1>
+            <p class="text-secondary small mb-0">
+                Minh bạch thu nhập theo vị trí (P1), chức danh/phụ cấp (P2) và hiệu quả KPI công việc (P3)
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>In / Xuất PDF (A4)
+            </button>
+            <a href="/Payroll/Index?periodId=@Model.SelectedPeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Bảng Lương Chung
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR (CHỌN KỲ) -->
+    <div class="card-enterprise p-3 mb-4 no-print">
+        <form method="get" action="/Payroll/MyPayslip" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá & chi trả:</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-calendar3"></i></span>
+                    <select name="periodId" class="form-select" onchange="this.form.submit()">
+                        @foreach (var period in Model.Periods)
+                        {
+                            <option value="@period.Id" selected="@(period.Id == Model.SelectedPeriodId)">
+                                @period.Name (@period.Year)
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-7 text-md-end pt-md-3">
+                <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill">
+                    <i class="bi bi-shield-check me-1"></i>Bảo mật thông tin thu nhập theo quy định Học viện
+                </span>
+            </div>
+        </form>
+    </div>
+
+    @if (p == null)
+    {
+        <div class="card-enterprise text-center py-5">
+            <div class="display-1 text-muted mb-3"><i class="bi bi-wallet2"></i></div>
+            <h4 class="fw-bold text-dark mb-2">Chưa Có Dữ Liệu Bảng Lương Trong Kỳ Này</h4>
+            <p class="text-secondary mb-4">
+                Dữ liệu lương theo KPI của bạn đang được phòng Kế hoạch - Tài chính tổng hợp và phê duyệt.
+            </p>
+            <a href="/Payroll/MyPayslip" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-arrow-clockwise me-1"></i>Tải lại trang
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- PAYSLIP CONTAINER (PRINT-READY) -->
+        <div class="payslip-card mx-auto shadow-sm">
+            <!-- GRADIENT HEADER -->
+            <div class="payslip-header p-4 text-white">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="payslip-logo-icon">
+                            <i class="bi bi-award-fill fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-uppercase small tracking-wide opacity-75 fw-semibold">Học Viện Hành Chính Quốc Gia</div>
+                            <h2 class="h4 fw-bold mb-0">PHIẾU THANH TOÁN THU NHẬP THEO KPI (3P)</h2>
+                            <div class="small opacity-75">Kỳ đánh giá: <span class="fw-bold">@p.PeriodName (@p.Year)</span></div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-white text-dark font-mono px-3 py-2 rounded-pill shadow-sm mb-1">
+                            Mã: @p.VoucherCode
+                        </div>
+                        <div class="small opacity-75">
+                            Trạng thái: 
+                            @if (p.PaymentStatus == "Đã thanh toán")
+                            {
+                                <span class="badge bg-success text-white">ĐÃ CHI TIỀN MẶT</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">CHỜ CHI TẠI QUỸ</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPLOYEE BASIC INFO BAR -->
+            <div class="p-3 bg-light border-bottom">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-3">
+                        <span class="text-muted small">Họ và tên:</span>
+                        <div class="fw-bold text-dark fs-6">@p.FullName</div>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-muted small">Mã CBCC:</span>
+                        <div class="fw-bold font-mono text-primary">@p.StaffCode</div>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted small">Phòng ban:</span>
+                        <div class="fw-semibold text-dark">@p.DepartmentName</div>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted small">Chức vụ / Ngạch bậc:</span>
+                        <div class="fw-semibold text-dark">@p.PositionName (@p.RankName)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN PAYSLIP BODY -->
+            <div class="p-4 bg-white">
+                <div class="row g-4">
+                    <!-- LEFT COLUMN: THU NHẬP (P1, P2, P3) -->
+                    <div class="col-lg-7">
+                        <h5 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-plus-circle-fill text-success"></i>I. CÁC KHOẢN THU NHẬP (3P)
+                        </h5>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-light small text-uppercase">
+                                    <tr>
+                                        <th>Khoản mục thu nhập</th>
+                                        <th>Căn cứ tính toán</th>
+                                        <th class="text-end" style="width: 140px;">Thành tiền (đ)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- P1 -->
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">1. Lương ngạch bậc (P1)</div>
+                                            <div class="small text-muted">NĐ 204/2004 & NĐ 73/2024 (Mức CS 2.340.000đ)</div>
+                                        </td>
+                                        <td>
+                                            <div class="font-mono small">
+                                                2.340.000 đ × HSL <strong>@p.SalaryCoefficient.ToString("0.00")</strong>
+                                            </div>
+                                            <div class="small text-muted font-mono" style="font-size: 11px;">
+                                                Ngày công: @p.ActualWorkDays / @p.StandardWorkDays công (Điểm CC: @p.AttendanceScore.ToString("0.0")/20)
+                                            </div>
+                                        </td>
+                                        <td class="text-end font-mono fw-bold text-dark">
+                                            @p.BaseSalary.ToString("N0")
+                                        </td>
+                                    </tr>
+
+                                    <!-- P2 -->
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">2. Phụ cấp chế độ (P2)</div>
+                                            <div class="small text-muted">
+                                                Chức vụ: @p.PositionAllowance.ToString("N0")đ &bull; Ưu đãi nghề: @p.ProfessionAllowance.ToString("N0")đ<br />
+                                                Thâm niên: @p.SeniorityAllowance.ToString("N0")đ &bull; Khác: @p.OtherAllowance.ToString("N0")đ
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-secondary border">Quy định Học viện</span>
+                                        </td>
+                                        <td class="text-end font-mono fw-bold text-dark">
+                                            @p.Allowances.ToString("N0")
+                                        </td>
+                                    </tr>
+
+                                    <!-- P3 (Performance Pay) -->
+                                    <tr class="table-primary-subtle">
+                                        <td>
+                                            <div class="fw-bold text-primary">3. Lương hiệu quả KPI (P3)</div>
+                                            <div class="small text-muted">
+                                                Điểm KPI: <strong class="text-primary font-mono">@p.KpiScore.ToString("0.0")</strong> — 
+                                                Xếp loại: <strong class="text-primary">@p.KpiClassification</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="font-mono small">
+                                                Hệ số KPI: <span class="badge bg-primary text-white">@p.KpiMultiplier.ToString("0.00")</span>
+                                            </div>
+                                            <div class="small text-muted" style="font-size: 11px;">
+                                                (P1 × Hệ số KPI)
+                                            </div>
+                                        </td>
+                                        <td class="text-end font-mono fw-bold text-primary fs-6">
+                                            @p.P3Salary.ToString("N0")
+                                        </td>
+                                    </tr>
+
+                                    <!-- Thưởng khác -->
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">4. Khen thưởng / Sáng kiến khác</div>
+                                            <div class="small text-muted">Thưởng chuyên đề, thành tích xuất sắc</div>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted small">Quyết định khen thưởng</span>
+                                        </td>
+                                        <td class="text-end font-mono fw-bold text-dark">
+                                            @p.BonusAmount.ToString("N0")
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <th colspan="2" class="text-uppercase fw-bold text-dark">TỔNG THU NHẬP (GROSS):</th>
+                                        <th class="text-end font-mono fw-bold text-primary fs-6">
+                                            @p.GrossIncome.ToString("N0") đ
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- GHI CHÚ QUY TẮC P3 -->
+                        <div class="p-3 bg-light rounded-3 border small text-secondary">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-info-circle me-1 text-primary"></i>Quy chế phân bổ P3 theo KPI:</div>
+                            <ul class="mb-0 ps-3">
+                                <li>Xuất sắc (&ge;90 điểm): Hệ số <strong class="text-dark">1.30</strong> (+30% quỹ hiệu quả).</li>
+                                <li>Tốt (70 - 89.9 điểm): Hệ số <strong class="text-dark">1.15</strong> (+15% quỹ hiệu quả).</li>
+                                <li>Đạt (50 - 69.9 điểm): Hệ số <strong class="text-dark">1.00</strong> (100% định mức cơ sở).</li>
+                                <li>Không đạt (&lt;50 điểm): Hệ số <strong class="text-danger">0.70</strong> (-30% định mức cơ sở).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: GIẢM TRỪ & THỰC LĨNH & QR CODE -->
+                    <div class="col-lg-5">
+                        <h5 class="fw-bold text-danger mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-dash-circle-fill text-danger"></i>II. CÁC KHOẢN KHẤU TRỪ & THUẾ
+                        </h5>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-light small text-uppercase">
+                                    <tr>
+                                        <th>Khoản mục giảm trừ</th>
+                                        <th>Tỷ lệ</th>
+                                        <th class="text-end" style="width: 120px;">Số tiền (đ)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Bảo hiểm xã hội (BHXH)</td>
+                                        <td class="font-mono small">8.0%</td>
+                                        <td class="text-end font-mono text-dark">@p.SocialInsurance.ToString("N0")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bảo hiểm y tế (BHYT)</td>
+                                        <td class="font-mono small">1.5%</td>
+                                        <td class="text-end font-mono text-dark">@p.HealthInsurance.ToString("N0")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bảo hiểm thất nghiệp (BHTN)</td>
+                                        <td class="font-mono small">1.0%</td>
+                                        <td class="text-end font-mono text-dark">@p.UnemploymentInsurance.ToString("N0")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Kinh phí công đoàn</td>
+                                        <td class="font-mono small">1.0%</td>
+                                        <td class="text-end font-mono text-dark">@p.UnionFee.ToString("N0")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Thuế thu nhập cá nhân (TNCN)</td>
+                                        <td class="font-mono small">Biểu lũy tiến</td>
+                                        <td class="text-end font-mono text-danger">@p.PersonalIncomeTax.ToString("N0")</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <th colspan="2" class="text-uppercase fw-bold text-dark">TỔNG KHẤU TRỪ:</th>
+                                        <th class="text-end font-mono fw-bold text-danger">
+                                            @((p.TotalDeductions + p.PersonalIncomeTax).ToString("N0")) đ
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- THỰC LĨNH CARD -->
+                        <div class="p-3 mb-4 rounded-3 border-2 border-success bg-success-subtle text-dark">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-uppercase fw-bold text-success small">THỰC LĨNH TIỀN MẶT (NET)</span>
+                                <span class="badge bg-success text-white">Mẫu 02-TT</span>
+                            </div>
+                            <div class="display-6 fw-bold font-mono text-success my-2" style="font-size: 1.85rem;">
+                                @p.NetSalary.ToString("N0") <span class="fs-5 fw-normal">VNĐ</span>
+                            </div>
+                            <div class="small text-secondary fst-italic">
+                                Bằng chữ: <strong>@p.AmountInWords</strong>
+                            </div>
+                        </div>
+
+                        <!-- QR CODE XÁC THỰC PHIẾU LƯƠNG -->
+                        <div class="p-3 rounded-3 border bg-light text-center">
+                            <div class="fw-bold text-dark small mb-2">
+                                <i class="bi bi-qr-code me-1 text-primary"></i>MÃ XÁC THỰC PHIẾU LƯƠNG
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center mb-2">
+                                <div class="p-2 bg-white border rounded shadow-sm">
+                                    <!-- QR Image via API or SVG Fallback -->
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=@Uri.EscapeDataString(p.QrCodeContent)" 
+                                         alt="QR Code Payslip" 
+                                         width="120" 
+                                         height="120"
+                                         class="img-fluid" 
+                                         onerror="this.src='/images/qr-placeholder.png';" />
+                                </div>
+                            </div>
+                            <div class="font-mono text-muted small text-break" style="font-size: 11px;">
+                                Mã băm: <span class="fw-semibold text-dark">@p.VerificationHash</span>
+                            </div>
+                            <div class="small text-muted mt-1" style="font-size: 11px;">
+                                Quét mã để xác minh tính toàn vẹn của phiếu lương tại Học viện
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIGNATURES FOOTER (IN ẤN) -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="fw-bold text-dark small">NGƯỜI LẬP BIỂU</div>
+                            <div class="text-muted small fst-italic">(Ký, họ tên)</div>
+                            <div style="height: 60px;"></div>
+                            <div class="fw-semibold text-dark small">Phòng Kế hoạch - Tài chính</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-dark small">KẾ TOÁN TRƯỞNG</div>
+                            <div class="text-muted small fst-italic">(Ký, họ tên)</div>
+                            <div style="height: 60px;"></div>
+                            <div class="fw-semibold text-dark small">ThS. Trần Thị Kế Toán Trưởng</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-dark small">NGƯỜI NHẬN TIỀN</div>
+                            <div class="text-muted small fst-italic">(Ký, ghi rõ họ tên)</div>
+                            <div style="height: 60px;"></div>
+                            <div class="fw-semibold text-dark small">@p.FullName</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .payslip-card {
+        max-width: 960px;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .payslip-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+    }
+
+    .payslip-logo-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .table-primary-subtle {
+        background-color: #eff6ff !important;
+    }
+
+    @@media print {
+        body {
+            background: #fff !important;
+            font-size: 11pt !important;
+        }
+
+        .no-print, .app-sidebar, .app-header, .scroll-progress-bar, footer {
+            display: none !important;
+        }
+
+        .app-container, .main-content, .content-body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .payslip-card {
+            max-width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        .payslip-header {
+            background: #1e3a8a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+</style>

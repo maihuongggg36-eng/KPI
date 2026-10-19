@@ -1,0 +1,94 @@
+version: '3.8'
+
+# =========================================================================================
+# HỌC VIỆN HÀNH CHÍNH VÀ QUẢN TRỊ CÔNG
+# DOCKER COMPOSE: STACK DEPLOYMENT (APP + SQL SERVER 2022 + REDIS CACHE)
+# =========================================================================================
+
+services:
+  # 1. Ứng dụng Quản lý KPI (.NET 8 Web App)
+  kpi-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kpi_web_app
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Server=kpi-sqlserver,1433;Database=KPI_System;User Id=sa;Password=Prod@NapaAdmin2026!;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - ConnectionStrings__Redis=kpi-redis:6379,abortConnect=false
+      - Serilog__MinimumLevel__Default=Information
+    depends_on:
+      kpi-sqlserver:
+        condition: service_healthy
+      kpi-redis:
+        condition: service_healthy
+    volumes:
+      - kpi_app_uploads:/app/wwwroot/uploads
+      - kpi_app_logs:/app/logs
+    networks:
+      - kpi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # 2. Cơ sở Dữ liệu Quan hệ: SQL Server 2022
+  kpi-sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: kpi_sql_server
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Prod@NapaAdmin2026!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - kpi_sql_data:/var/opt/mssql
+    networks:
+      - kpi-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Prod@NapaAdmin2026!' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # 3. Phân tán Bộ nhớ đệm: Redis 7
+  kpi-redis:
+    image: redis:7-alpine
+    container_name: kpi_redis_cache
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass "RedisAuthKey2026"
+    ports:
+      - "6379:6379"
+    volumes:
+      - kpi_redis_data:/data
+    networks:
+      - kpi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "RedisAuthKey2026", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+networks:
+  kpi-network:
+    driver: bridge
+
+volumes:
+  kpi_sql_data:
+    name: kpi_sql_data
+  kpi_redis_data:
+    name: kpi_redis_data
+  kpi_app_uploads:
+    name: kpi_app_uploads
+  kpi_app_logs:
+    name: kpi_app_logs

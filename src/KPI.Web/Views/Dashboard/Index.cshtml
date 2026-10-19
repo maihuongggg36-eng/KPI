@@ -1,0 +1,131 @@
+@model KPI.Web.ViewModels.Dashboard.DashboardIndexViewModel
+@{
+    ViewData["Title"] = "Bàn làm việc Điều hành";
+    ViewData["BreadcrumbItems"] = new List<(string Title, string Url)>
+    {
+        ("Bàn làm việc", "/Dashboard")
+    };
+}
+
+<!-- Top Dashboard Header & Role Switcher Bar -->
+<div class="card-enterprise p-3 mb-4">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary fw-bold">
+                    <i class="bi bi-shield-lock-fill me-1"></i>Hệ thống Quản lý KPI & NĐ 90
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary">Học viện Hành chính và Quản trị công</span>
+            </div>
+            <h4 class="fw-bold mb-0 text-primary-emphasis">
+                Bàn làm việc Điều hành Đa Vai trò (Role-Based Dashboard)
+            </h4>
+            <div class="text-secondary small">
+                Đăng nhập: <strong>@Model.UserFullName</strong> (@Model.CurrentUsername) • Vai trò chính: <span class="badge bg-info-subtle text-info font-mono">@Model.PrimaryRole</span>
+            </div>
+        </div>
+
+        <!-- Role Switcher Pill Navigation -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="btn-group p-1 bg-surface-hover rounded-pill border shadow-sm" role="group" aria-label="Role Switcher">
+                <button type="button" class="btn btn-sm rounded-pill role-tab-btn @(Model.ActiveRole == "Director" ? "btn-primary active" : "btn-light text-secondary")" 
+                        data-role="Director" onclick="switchDashboardRole('Director')">
+                    <i class="bi bi-person-fill-gear me-1"></i>Giám đốc
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill role-tab-btn @(Model.ActiveRole == "Manager" ? "btn-primary active" : "btn-light text-secondary")" 
+                        data-role="Manager" onclick="switchDashboardRole('Manager')">
+                    <i class="bi bi-person-workspace me-1"></i>Trưởng phòng
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill role-tab-btn @(Model.ActiveRole == "Employee" ? "btn-primary active" : "btn-light text-secondary")" 
+                        data-role="Employee" onclick="switchDashboardRole('Employee')">
+                    <i class="bi bi-person-badge me-1"></i>Chuyên viên
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill role-tab-btn @(Model.ActiveRole == "Accountant" ? "btn-primary active" : "btn-light text-secondary")" 
+                        data-role="Accountant" onclick="switchDashboardRole('Accountant')">
+                    <i class="bi bi-cash-coin me-1"></i>Kế toán
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill role-tab-btn @(Model.ActiveRole == "Hr" ? "btn-primary active" : "btn-light text-secondary")" 
+                        data-role="Hr" onclick="switchDashboardRole('Hr')">
+                    <i class="bi bi-shield-check me-1"></i>TCCB (HR)
+                </button>
+            </div>
+
+            <!-- Auto-Refresh Toggle & Actions -->
+            <div class="d-flex align-items-center gap-2">
+                <div class="form-check form-switch mb-0 d-flex align-items-center gap-2 p-0" title="Tự động cập nhật số liệu mỗi 60 giây">
+                    <input class="form-check-input ms-0" type="checkbox" id="autoRefreshSwitch" checked onchange="toggleAutoRefresh(this)">
+                    <label class="form-check-label small fw-semibold text-secondary" for="autoRefreshSwitch" style="user-select: none;">
+                        Auto-Refresh (<span id="countdownTimer">60</span>s)
+                    </label>
+                </div>
+
+                <button class="btn btn-sm btn-outline-secondary rounded-circle" id="manualRefreshBtn" title="Làm mới dữ liệu ngay" onclick="refreshCurrentDashboard()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5 Tab Content Containers -->
+<div id="dashboardTabsContainer">
+    <!-- Tab 1: Giám đốc (SCR-03A) -->
+    <div class="dashboard-panel @(Model.ActiveRole == "Director" ? "" : "d-none")" id="panel-Director">
+        <partial name="_DirectorDashboard" model="Model.DirectorData" />
+    </div>
+
+    <!-- Tab 2: Trưởng phòng (SCR-03B) -->
+    <div class="dashboard-panel @(Model.ActiveRole == "Manager" ? "" : "d-none")" id="panel-Manager">
+        <partial name="_ManagerDashboard" model="Model.ManagerData" />
+    </div>
+
+    <!-- Tab 3: Chuyên viên / Nhân viên -->
+    <div class="dashboard-panel @(Model.ActiveRole == "Employee" ? "" : "d-none")" id="panel-Employee">
+        <partial name="_EmployeeDashboard" model="Model.EmployeeData" />
+    </div>
+
+    <!-- Tab 4: Kế toán viên -->
+    <div class="dashboard-panel @(Model.ActiveRole == "Accountant" ? "" : "d-none")" id="panel-Accountant">
+        <partial name="_AccountantDashboard" model="Model.AccountantData" />
+    </div>
+
+    <!-- Tab 5: Cán bộ Tổ chức Cán bộ (HR Admin) -->
+    <div class="dashboard-panel @(Model.ActiveRole == "Hr" ? "" : "d-none")" id="panel-Hr">
+        <partial name="_HrDashboard" model="Model.HrData" />
+    </div>
+</div>
+
+<!-- Modal Thẩm định / Phê duyệt nhanh -->
+<div class="modal fade" id="quickActionModal" tabindex="-1" aria-labelledby="quickActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-enterprise border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="quickActionModalLabel">Phê chuẩn Kết quả Đánh giá</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalEvalId" value="" />
+                <p class="small text-secondary mb-3">
+                    Xác nhận phê chuẩn hồ sơ đánh giá và xếp loại công chức cho đồng chí: <strong id="modalEmployeeName" class="text-primary-emphasis"></strong>.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Ý kiến kết luận của Lãnh đạo:</label>
+                    <textarea class="form-control form-control-enterprise" id="modalComment" rows="3" placeholder="Đồng ý với kết quả tự chấm và thẩm định của Trưởng phòng..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-success btn-sm rounded-pill px-3 btn-lift" id="modalConfirmBtn" onclick="submitQuickApprove()">
+                    <i class="bi bi-check-lg me-1"></i> Xác nhận Phê chuẩn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- ApexCharts Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Role Dashboards Controller & Chart Management Script -->
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

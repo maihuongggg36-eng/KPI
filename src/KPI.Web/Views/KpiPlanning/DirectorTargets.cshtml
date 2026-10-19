@@ -1,0 +1,243 @@
+@model List<KPI.Application.DTOs.DirectorTargetDto>
+@{
+    ViewData["Title"] = "Mục Tiêu Ban Giám Đốc";
+    var periods = ViewBag.Periods as List<KPI.Application.DTOs.PeriodSelectDto> ?? new();
+    long selectedPeriodId = ViewBag.SelectedPeriodId ?? 1;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="KpiPlanning" asp-action="Assign">Kế hoạch KPI</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold">Mục tiêu Ban Giám đốc</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark">
+                <i class="bi bi-flag-fill text-danger me-2"></i>Mục Tiêu Chỉ Đạo Của Ban Giám Đốc (Stretch Targets)
+            </h2>
+            <p class="text-muted small mb-0">Hệ thống mục tiêu thách thức do Ban Giám đốc ban hành. Cán bộ/giảng viên phải <strong>VƯỢT QUA</strong> mục tiêu này mới đủ điều kiện đạt xếp loại Tốt hoặc Xuất sắc.</p>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="openCreateTargetModal()">
+            <i class="bi bi-plus-circle me-1"></i> Ban Hành Mục Tiêu Mới
+        </button>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Nguyên tắc Stretch Goal Banner -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-danger bg-opacity-10 border-start border-4 border-danger">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="bi bi-rocket-takeoff-fill fs-2 text-danger"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-danger mb-1">Quy tắc Vàng về Mục Tiêu Thách Thức (Stretch Target):</h5>
+                    <div class="small text-dark">
+                        &bull; Đạt <strong>100% mục tiêu cơ bản</strong> = Chỉ được xếp loại <strong>Hoàn thành nhiệm vụ (Hệ số K = 1.0)</strong>.<br />
+                        &bull; Phải <strong>VƯỢT &gt; 100% mục tiêu (tiệm cận hoặc vượt mức thách thức)</strong> mới được xét <strong>Hoàn thành tốt (K = 1.15)</strong> hoặc <strong>Xuất sắc (K = 1.3)</strong>.<br />
+                        &bull; Dưới 80% mục tiêu = <strong>Không hoàn thành nhiệm vụ (K = 0.7)</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <form method="get" asp-action="DirectorTargets" class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <label class="small text-muted fw-semibold">Kỳ đánh giá KPI</label>
+                    <select name="periodId" class="form-select" onchange="this.form.submit()">
+                        @foreach (var p in periods)
+                        {
+                            <option value="@p.Id" selected="@(p.Id == selectedPeriodId)">@p.Name (@p.Year)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end justify-content-end">
+                    <span class="badge bg-light text-muted border py-2 px-3">Tổng cộng: @Model.Count mục tiêu chỉ đạo</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Targets List Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-dark"><i class="bi bi-bullseye me-2 text-danger"></i>Danh sách Chỉ tiêu Mục tiêu Ban Giám đốc Ban hành</span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Cơ sở xét duyệt xếp loại cao</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-3" style="width: 50px;">STT</th>
+                            <th>Tên Chỉ Tiêu Mục Tiêu</th>
+                            <th>Áp dụng Đơn vị</th>
+                            <th class="text-center">Mục tiêu Chuẩn (Đạt 100%)</th>
+                            <th class="text-center">Mức Thách Thức (VƯỢT)</th>
+                            <th>Đơn vị tính</th>
+                            <th>Mô tả / Hướng dẫn</th>
+                            <th class="text-end pe-3" style="width: 150px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có mục tiêu chỉ đạo nào cho kỳ đánh giá này.
+                                </td>
+                            </tr>
+                        }
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var t = Model[i];
+                            <tr>
+                                <td class="ps-3 fw-bold text-muted">@(i + 1)</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@t.TargetName</div>
+                                    <div class="small text-muted">Ban hành bởi: @t.CreatedByName &bull; @t.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-primary border">@t.DepartmentName</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-subtle text-dark border px-3 py-2 font-monospace fs-6">
+                                        @t.TargetValue.ToString("N0") @t.TargetUnit
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger text-white px-3 py-2 font-monospace fs-6 shadow-sm">
+                                        <i class="bi bi-arrow-up-right me-1"></i>&gt; @t.ChallengeValue.ToString("N0") @t.TargetUnit
+                                    </span>
+                                </td>
+                                <td><span class="text-muted small">@t.TargetUnit</span></td>
+                                <td class="small text-muted" style="max-width: 320px;">@t.Description</td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary"
+                                                onclick="openEditTargetModal(@t.Id, '@Html.Raw(t.TargetName)', @t.TargetValue, @t.ChallengeValue, '@t.TargetUnit', '@Html.Raw(t.Description)', @(t.DepartmentId ?? 0))">
+                                            <i class="bi bi-pencil-square"></i> Sửa
+                                        </button>
+                                        <form method="post" asp-action="DeleteDirectorTarget" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa mục tiêu này?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@t.Id" />
+                                            <input type="hidden" name="periodId" value="@selectedPeriodId" />
+                                            <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm / Sửa Mục tiêu BGĐ -->
+<div class="modal fade" id="targetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-action="SaveDirectorTarget">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="targetId" value="" />
+                <input type="hidden" name="PeriodId" value="@selectedPeriodId" />
+
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="targetModalTitle">
+                        <i class="bi bi-flag-fill me-2"></i>Thiết lập Mục tiêu Ban Giám đốc
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Tên mục tiêu chỉ đạo <span class="text-danger">*</span></label>
+                            <input type="text" name="TargetName" id="targetName" class="form-control" placeholder="Ví dụ: Định mức giảng dạy tối thiểu, Bài báo nghiên cứu..." required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Mức cơ bản (Đạt 100%) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" name="TargetValue" id="targetVal" class="form-control" placeholder="320" required />
+                            <div class="form-text text-muted">Đạt mức này chỉ được xếp Hoàn thành.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-danger">Mức thách thức (VƯỢT) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" name="ChallengeValue" id="targetChallenge" class="form-control border-danger" placeholder="350" required />
+                            <div class="form-text text-danger">Bắt buộc vượt mức này để đạt Tốt/Xuất sắc.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Đơn vị tính <span class="text-danger">*</span></label>
+                            <input type="text" name="TargetUnit" id="targetUnit" class="form-control" placeholder="tiết, bài báo, %" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú hướng dẫn / Tiêu chí đánh giá</label>
+                            <textarea name="Description" id="targetDesc" class="form-control" rows="3" placeholder="Quy định cụ thể cách đo lường hoặc điều kiện công nhận..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu và Ban Hành Mục Tiêu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCreateTargetModal() {
+            document.getElementById('targetModalTitle').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Thiết lập Mục tiêu Ban Giám đốc';
+            document.getElementById('targetId').value = '';
+            document.getElementById('targetName').value = '';
+            document.getElementById('targetVal').value = '';
+            document.getElementById('targetChallenge').value = '';
+            document.getElementById('targetUnit').value = '';
+            document.getElementById('targetDesc').value = '';
+
+            var modal = new bootstrap.Modal(document.getElementById('targetModal'));
+            modal.show();
+        }
+
+        function openEditTargetModal(id, name, val, challenge, unit, desc, deptId) {
+            document.getElementById('targetModalTitle').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Chỉnh sửa Mục tiêu Ban Giám đốc';
+            document.getElementById('targetId').value = id;
+            document.getElementById('targetName').value = name;
+            document.getElementById('targetVal').value = val;
+            document.getElementById('targetChallenge').value = challenge;
+            document.getElementById('targetUnit').value = unit;
+            document.getElementById('targetDesc').value = desc || '';
+
+            var modal = new bootstrap.Modal(document.getElementById('targetModal'));
+            modal.show();
+        }
+    </script>
+}

@@ -1,0 +1,358 @@
+@model List<KPI.Application.DTOs.AttendanceDto>
+@{
+    ViewData["Title"] = "Bảng Chấm Công Chuyên Cần";
+    int currentYear = ViewBag.Year ?? DateTime.Now.Year;
+    int currentMonth = ViewBag.Month ?? DateTime.Now.Month;
+    var departments = ViewBag.Departments as List<KPI.Domain.Entities.Organization.Department> ?? new();
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold">Chấm công & Kỷ luật lao động</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark">
+                <i class="bi bi-calendar-check-fill text-success me-2"></i>Bảng Chấm Công & Kỷ Luật Công Vụ
+            </h2>
+            <p class="text-muted small mb-0">Thành phần Chấm công & Kỷ luật chiếm <strong>20 điểm (20%)</strong> trong tổng điểm đánh giá KPI của Học viện.</p>
+        </div>
+        <form method="post" asp-action="AutoGenerate" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="year" value="@currentYear" />
+            <input type="hidden" name="month" value="@currentMonth" />
+            <button type="submit" class="btn btn-outline-success">
+                <i class="bi bi-arrow-repeat me-1"></i> Khởi tạo Ngày Công Mặc Định
+            </button>
+        </form>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Công thức tính điểm 20% -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-light bg-opacity-75">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-success me-2">Quy tắc chấm điểm 20/100</span>
+                <span class="fw-bold text-dark small">Công thức tính điểm Chấm công & Kỷ luật:</span>
+            </div>
+            <div class="row g-2 text-muted small">
+                <div class="col-md-3">
+                    <div class="p-2 bg-white rounded border">
+                        <i class="bi bi-calendar-event text-primary me-1"></i><strong>Đủ ngày công (8đ):</strong> <code>8 × (Thực tế / 22)</code>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 bg-white rounded border">
+                        <i class="bi bi-clock-history text-warning me-1"></i><strong>Đúng giờ (4đ):</strong> Trừ 0.5đ/lần đi muộn, về sớm
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 bg-white rounded border">
+                        <i class="bi bi-slash-circle text-danger me-1"></i><strong>Không nghỉ KP (4đ):</strong> Trừ 1đ/ngày nghỉ không phép
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-2 bg-white rounded border">
+                        <i class="bi bi-people text-info me-1"></i><strong>Họp & Nội quy (4đ):</strong> Trừ điểm nếu vắng họp hoặc vi phạm
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-3 border-start border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Tổng nhân sự được chấm</div>
+                        <div class="h3 fw-bold text-dark mb-0">@ViewBag.TotalEmployees</div>
+                    </div>
+                    <i class="bi bi-people fs-2 text-primary"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-3 border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Điểm chấm công trung bình</div>
+                        <div class="h3 fw-bold text-success mb-0">@ViewBag.AverageScore <span class="fs-6 text-muted">/ 20 điểm</span></div>
+                    </div>
+                    <i class="bi bi-star-fill fs-2 text-success"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-3 border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Đi đủ công 100%</div>
+                        <div class="h3 fw-bold text-info mb-0">@ViewBag.FullAttendanceCount <span class="fs-6 text-muted">cán bộ</span></div>
+                    </div>
+                    <i class="bi bi-check2-all fs-2 text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-3">
+            <form method="get" asp-action="Index" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <label class="small text-muted fw-semibold">Tháng</label>
+                    <select name="month" class="form-select">
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            <option value="@m" selected="@(currentMonth == m)">Tháng @m</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="small text-muted fw-semibold">Năm</label>
+                    <select name="year" class="form-select">
+                        @for (int y = DateTime.Now.Year - 1; y <= DateTime.Now.Year + 1; y++)
+                        {
+                            <option value="@y" selected="@(currentYear == y)">Năm @y</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="small text-muted fw-semibold">Phòng ban / Khoa</label>
+                    <select name="departmentId" class="form-select">
+                        <option value="">-- Tất cả Phòng ban --</option>
+                        @foreach (var d in departments)
+                        {
+                            <option value="@d.Id" selected="@(ViewBag.DepartmentId == d.Id)">@d.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i> Xem bảng công</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-table me-2 text-success"></i>Bảng Chi Tiết Chấm Công Tháng @currentMonth / @currentYear
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">Chuẩn: 22 ngày công / tháng</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-3">Mã CB</th>
+                            <th>Họ và Tên</th>
+                            <th>Đơn vị</th>
+                            <th class="text-center">Ngày chuẩn</th>
+                            <th class="text-center">Ngày thực tế</th>
+                            <th class="text-center">Nghỉ phép</th>
+                            <th class="text-center">Đi muộn</th>
+                            <th class="text-center">Nghỉ KP</th>
+                            <th class="text-center">Vắng họp</th>
+                            <th class="text-center">Điểm CC (Max 20)</th>
+                            <th class="text-center">Tỷ lệ công</th>
+                            <th class="text-end pe-3">Cập nhật</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="12" class="text-center py-5 text-muted">
+                                    <i class="bi bi-calendar-x fs-1 d-block mb-2 text-muted"></i>
+                                    Chưa có dữ liệu chấm công cho tháng @currentMonth / @currentYear.
+                                    <div class="mt-2">
+                                        <form method="post" asp-action="AutoGenerate" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="year" value="@currentYear" />
+                                            <input type="hidden" name="month" value="@currentMonth" />
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-magic me-1"></i>Khởi tạo dữ liệu tự động
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var a in Model)
+                        {
+                            var scoreBadge = a.AttendanceScore >= 18 ? "bg-success" : (a.AttendanceScore >= 14 ? "bg-primary" : (a.AttendanceScore >= 10 ? "bg-warning text-dark" : "bg-danger"));
+
+                            <tr>
+                                <td class="ps-3 fw-bold text-muted small">@a.StaffCode</td>
+                                <td>
+                                    <div class="fw-bold text-dark">@a.FullName</div>
+                                    <div class="small text-muted">@a.PositionName</div>
+                                </td>
+                                <td><span class="small text-secondary">@a.DepartmentName</span></td>
+                                <td class="text-center font-monospace">@a.StandardWorkDays</td>
+                                <td class="text-center fw-bold font-monospace @(a.ActualWorkDays < a.StandardWorkDays ? "text-danger" : "text-success")">
+                                    @a.ActualWorkDays
+                                </td>
+                                <td class="text-center font-monospace text-muted">@a.PaidLeave</td>
+                                <td class="text-center font-monospace @(a.LateCount > 0 ? "text-danger fw-bold" : "text-muted")">
+                                    @a.LateCount
+                                </td>
+                                <td class="text-center font-monospace @(a.UnauthorizedAbsence > 0 ? "text-danger fw-bold" : "text-muted")">
+                                    @a.UnauthorizedAbsence
+                                </td>
+                                <td class="text-center font-monospace @(a.MissedMeetings > 0 ? "text-danger fw-bold" : "text-muted")">
+                                    @a.MissedMeetings
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @scoreBadge px-2 py-1 fs-6">
+                                        @a.AttendanceScore.ToString("0.0")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="small font-monospace text-secondary">@((a.WorkDayRatio * 100).ToString("0.#"))%</span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                            onclick="openEditAttendanceModal(@a.EmployeeId, '@Html.Raw(a.FullName)', @a.Year, @a.Month, @a.StandardWorkDays, @a.ActualWorkDays, @a.PaidLeave, @a.UnpaidLeave, @a.SickLeave, @a.LateCount, @a.EarlyLeaveCount, @a.UnauthorizedAbsence, @a.MissedMeetings, @(a.DisciplineViolation ? "true" : "false"), '@Html.Raw(a.Notes)')">
+                                        <i class="bi bi-pencil-square me-1"></i> Chấm công
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chấm công cho 1 nhân viên -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-action="Save">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="EmployeeId" id="attEmpId" />
+                <input type="hidden" name="Year" id="attYear" />
+                <input type="hidden" name="Month" id="attMonth" />
+
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-calendar2-check me-2"></i>Cập nhật Chấm công: <span id="attEmpName"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày công chuẩn</label>
+                            <input type="number" name="StandardWorkDays" id="attStdDays" class="form-control" value="22" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày công thực tế <span class="text-danger">*</span></label>
+                            <input type="number" name="ActualWorkDays" id="attActDays" class="form-control" value="22" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nghỉ phép có lương</label>
+                            <input type="number" name="PaidLeave" id="attPaidLeave" class="form-control" value="0" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nghỉ không lương</label>
+                            <input type="number" name="UnpaidLeave" id="attUnpaidLeave" class="form-control" value="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nghỉ ốm có chứng nhận</label>
+                            <input type="number" name="SickLeave" id="attSickLeave" class="form-control" value="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số lần đi muộn (trừ 0.5đ/lần)</label>
+                            <input type="number" name="LateCount" id="attLate" class="form-control" value="0" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số lần về sớm (trừ 0.5đ/lần)</label>
+                            <input type="number" name="EarlyLeaveCount" id="attEarly" class="form-control" value="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nghỉ không phép (trừ 1đ/ngày)</label>
+                            <input type="number" name="UnauthorizedAbsence" id="attUnauth" class="form-control" value="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Vắng họp sinh hoạt (trừ 0.5đ/lần)</label>
+                            <input type="number" name="MissedMeetings" id="attMissed" class="form-control" value="0" />
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="DisciplineViolation" id="attDiscipline" value="true" />
+                                <label class="form-check-label fw-semibold text-danger" for="attDiscipline">
+                                    Vi phạm nội quy / Kỷ luật cơ quan (Trừ thẳng 2.0 điểm)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú thêm</label>
+                            <input type="text" name="Notes" id="attNotes" class="form-control" placeholder="Ghi chú minh chứng hoặc lý do nếu có..." />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success px-4 fw-semibold">
+                        <i class="bi bi-save me-1"></i> Lưu và Tính Điểm Tự Động
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditAttendanceModal(empId, empName, year, month, std, act, paid, unpaid, sick, late, early, unauth, missed, disc, notes) {
+            document.getElementById('attEmpId').value = empId;
+            document.getElementById('attEmpName').innerText = empName;
+            document.getElementById('attYear').value = year;
+            document.getElementById('attMonth').value = month;
+            document.getElementById('attStdDays').value = std;
+            document.getElementById('attActDays').value = act;
+            document.getElementById('attPaidLeave').value = paid;
+            document.getElementById('attUnpaidLeave').value = unpaid;
+            document.getElementById('attSickLeave').value = sick;
+            document.getElementById('attLate').value = late;
+            document.getElementById('attEarly').value = early;
+            document.getElementById('attUnauth').value = unauth;
+            document.getElementById('attMissed').value = missed;
+            document.getElementById('attDiscipline').checked = disc;
+            document.getElementById('attNotes').value = notes || '';
+
+            var modal = new bootstrap.Modal(document.getElementById('attendanceModal'));
+            modal.show();
+        }
+    </script>
+}

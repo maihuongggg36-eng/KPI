@@ -1,0 +1,242 @@
+@model KPI.Web.ViewModels.Catalog.KpiBankViewModel
+@{
+    ViewData["Title"] = "Ngân hàng Chỉ tiêu KPI Chuẩn";
+    ViewData["BreadcrumbItems"] = new List<(string Title, string Url)>
+    {
+        ("Quản trị Danh mục", "/Catalog"),
+        ("Ngân hàng KPI Chuẩn", "/Catalog/KpiBank")
+    };
+}
+
+<!-- Top Header Banner -->
+<div class="card-enterprise p-4 mb-4" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%); border-left: 4px solid var(--color-primary);">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary-subtle text-primary fw-bold">
+                    <i class="bi bi-journal-bookmark-fill me-1"></i>Từ điển Chỉ số BSC Chuẩn
+                </span>
+                <span class="badge bg-success-subtle text-success">@Model.Items.Count Chỉ tiêu sẵn sàng</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-primary-emphasis">Ngân hàng Chỉ số KPI Chuẩn hóa (Master Dictionary)</h3>
+            <p class="text-secondary small mb-0">
+                Kho dữ liệu mẫu được xây dựng theo 4 viễn cảnh Thẻ điểm Cân bằng (BSC) kết hợp nhóm Đạo đức công vụ theo <strong>Nghị định 90/2020/NĐ-CP</strong>.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            <a asp-action="ExportCsv" asp-route-type="kpi-items" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Xuất CSV
+            </a>
+            <button class="btn btn-primary btn-sm rounded-pill px-3 btn-lift" onclick="openNewKpiModal()">
+                <i class="bi bi-plus-lg me-1"></i> Thêm Chỉ số Mới (Ctrl+N)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc & Công cụ Tìm kiếm -->
+<div class="card-enterprise p-3 mb-4">
+    <div class="row g-3 align-items-center">
+        <!-- Search Box -->
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <i class="bi bi-search text-secondary"></i>
+                </span>
+                <input type="text" class="form-control form-control-enterprise border-start-0" id="kpiSearchInput" 
+                       placeholder="Tìm kiếm theo mã, tên chỉ tiêu hoặc mô tả..." value="@Model.SearchQuery" onkeyup="filterKpiCards()" />
+            </div>
+        </div>
+
+        <!-- Filter by Sector -->
+        <div class="col-md-3">
+            <select class="form-select form-control-enterprise" id="kpiSectorSelect" onchange="filterKpiCards()">
+                <option value="All" selected="@(Model.ActiveSector == "All")">-- Tất cả Đối tượng --</option>
+                <option value="PublicSector" selected="@(Model.ActiveSector == "PublicSector")">Chỉ Cán bộ Công chức</option>
+                <option value="Enterprise" selected="@(Model.ActiveSector == "Enterprise")">Khối Doanh nghiệp / Chung</option>
+            </select>
+        </div>
+
+        <!-- View Mode Switcher (Grid vs Table) -->
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group rounded-pill border p-1" role="group">
+                <button type="button" class="btn btn-sm rounded-pill @(Model.ViewMode == "grid" ? "btn-primary active" : "btn-light")" id="viewGridBtn" onclick="switchViewMode('grid')">
+                    <i class="bi bi-grid-fill me-1"></i>Dạng Thẻ
+                </button>
+                <button type="button" class="btn btn-sm rounded-pill @(Model.ViewMode == "table" ? "btn-primary active" : "btn-light")" id="viewTableBtn" onclick="switchViewMode('table')">
+                    <i class="bi bi-list-ul me-1"></i>Dạng Bảng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter by Perspective Tabs -->
+    <div class="d-flex flex-wrap gap-2 pt-3 border-top mt-3" id="perspectiveTabs">
+        <button class="btn btn-sm rounded-pill @(Model.ActivePerspective == "All" ? "btn-primary" : "btn-outline-secondary") filter-persp-btn" 
+                data-persp="All" onclick="filterByPerspective('All', this)">
+            Tất cả (@Model.Items.Count)
+        </button>
+        <button class="btn btn-sm rounded-pill @(Model.ActivePerspective == "InternalProcess" ? "btn-primary" : "btn-outline-secondary") filter-persp-btn" 
+                data-persp="InternalProcess" onclick="filterByPerspective('InternalProcess', this)">
+            <i class="bi bi-gear-fill me-1"></i>Quy trình Nội bộ
+        </button>
+        <button class="btn btn-sm rounded-pill @(Model.ActivePerspective == "PublicServiceEthics" ? "btn-primary" : "btn-outline-secondary") filter-persp-btn" 
+                data-persp="PublicServiceEthics" onclick="filterByPerspective('PublicServiceEthics', this)">
+            <i class="bi bi-shield-fill-check me-1"></i>Đạo đức Công vụ
+        </button>
+        <button class="btn btn-sm rounded-pill @(Model.ActivePerspective == "Customer" ? "btn-primary" : "btn-outline-secondary") filter-persp-btn" 
+                data-persp="Customer" onclick="filterByPerspective('Customer', this)">
+            <i class="bi bi-people-fill me-1"></i>Phục vụ Người học
+        </button>
+        <button class="btn btn-sm rounded-pill @(Model.ActivePerspective == "LearningGrowth" ? "btn-primary" : "btn-outline-secondary") filter-persp-btn" 
+                data-persp="LearningGrowth" onclick="filterByPerspective('LearningGrowth', this)">
+            <i class="bi bi-mortarboard-fill me-1"></i>NCKH & Đổi mới
+        </button>
+    </div>
+</div>
+
+<!-- CONTAINER 1: DẠNG LƯỚI THẺ (GRID CARDS) -->
+<div id="kpiGridContainer" class="@(Model.ViewMode == "grid" ? "" : "d-none")">
+    <div class="row g-4" id="kpiCardList">
+        @foreach (var item in Model.Items)
+        {
+            var iconClass = item.Perspective == "PublicServiceEthics" ? "bi-shield-check text-success" :
+                            item.Perspective == "Customer" ? "bi-people text-info" :
+                            item.Perspective == "LearningGrowth" ? "bi-mortarboard text-warning" : "bi-gear text-primary";
+
+            <div class="col-md-6 col-xl-4 kpi-card-item" 
+                 data-code="@item.Code.ToLower()" 
+                 data-name="@item.Name.ToLower()" 
+                 data-desc="@(item.Description?.ToLower() ?? "")"
+                 data-persp="@item.Perspective" 
+                 data-cs="@(item.IsCivilServantOnly ? "PublicSector" : "Enterprise")">
+                <div class="card-enterprise h-100 p-3 d-flex flex-column justify-content-between position-relative card-hover">
+                    <div>
+                        <!-- Header thẻ -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-dark font-mono fs-6 px-2 py-1">@item.Code</span>
+                            <div class="d-flex gap-1 align-items-center">
+                                @if (item.IsCivilServantOnly)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning small">Công chức</span>
+                                }
+                                <span class="badge @(item.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary") small">
+                                    @(item.IsActive ? "Hoạt động" : "Tạm dừng")
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tên chỉ tiêu -->
+                        <h6 class="fw-bold mb-2 text-primary-emphasis">@item.Name</h6>
+                        <p class="text-secondary small mb-3 line-clamp-2" style="min-height: 38px;">
+                            @(string.IsNullOrWhiteSpace(item.Description) ? "Chưa có bản mô tả hướng dẫn chi tiết." : item.Description)
+                        </p>
+                    </div>
+
+                    <!-- Thông tin thuộc tính & Nút thao tác -->
+                    <div class="pt-3 border-top">
+                        <div class="row g-2 text-secondary small mb-3">
+                            <div class="col-6">
+                                <i class="bi @iconClass me-1"></i>@item.CategoryName
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    Đo bằng: @item.UnitName (@item.UnitSymbol)
+                                </span>
+                            </div>
+                            <div class="col-12 font-mono small text-muted">
+                                <i class="bi bi-calculator me-1"></i>@(item.ScoringFormula == "HigherIsBetter" ? "Càng cao càng tốt" : "Càng thấp càng tốt")
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="openCloneModal(@item.Id, '@item.Code', '@item.Name')">
+                                <i class="bi bi-copy me-1"></i>Nhân bản
+                            </button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary rounded-circle" title="Chỉnh sửa" onclick="editKpiItem(@item.Id, '@item.Code', '@item.Name', @item.CategoryId, @item.UnitId, @item.MethodId, '@item.ScoringFormula', @(item.IsCivilServantOnly ? "true" : "false"), '@item.Description')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa chỉ tiêu" onclick="confirmDeleteKpi(@item.Id, '@item.Name')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- CONTAINER 2: DẠNG BẢNG (DATA TABLE) -->
+<div id="kpiTableContainer" class="@(Model.ViewMode == "table" ? "" : "d-none")">
+    <div class="card-enterprise">
+        <div class="table-responsive">
+            <table class="table-enterprise">
+                <thead>
+                    <tr>
+                        <th>Mã KPI</th>
+                        <th>Tên Chỉ Tiêu</th>
+                        <th>Viễn cảnh / Nhóm</th>
+                        <th>Đơn vị tính</th>
+                        <th>Công thức</th>
+                        <th>Đối tượng</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="kpiTableBody">
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="kpi-table-row" 
+                            data-code="@item.Code.ToLower()" 
+                            data-name="@item.Name.ToLower()" 
+                            data-persp="@item.Perspective" 
+                            data-cs="@(item.IsCivilServantOnly ? "PublicSector" : "Enterprise")">
+                            <td><span class="badge bg-dark font-mono">@item.Code</span></td>
+                            <td>
+                                <div class="fw-bold">@item.Name</div>
+                                <small class="text-secondary">@item.Description</small>
+                            </td>
+                            <td><span class="badge bg-primary-subtle text-primary">@item.CategoryName</span></td>
+                            <td>@item.UnitName (@item.UnitSymbol)</td>
+                            <td>
+                                <span class="badge @(item.ScoringFormula == "HigherIsBetter" ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
+                                    @(item.ScoringFormula == "HigherIsBetter" ? "Càng cao càng tốt" : "Càng thấp càng tốt")
+                                </span>
+                            </td>
+                            <td>
+                                @if (item.IsCivilServantOnly) { <span class="badge bg-warning-subtle text-warning">Công chức</span> }
+                                else { <span class="badge bg-secondary-subtle text-secondary">Tất cả</span> }
+                            </td>
+                            <td>
+                                <span class="badge @(item.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                    @(item.IsActive ? "Hoạt động" : "Tạm dừng")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info rounded-circle me-1" title="Nhân bản" onclick="openCloneModal(@item.Id, '@item.Code', '@item.Name')">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary rounded-circle me-1" title="Sửa" onclick="editKpiItem(@item.Id, '@item.Code', '@item.Name', @item.CategoryId, @item.UnitId, @item.MethodId, '@item.ScoringFormula', @(item.IsCivilServantOnly ? "true" : "false"), '@item.Description')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa" onclick="confirmDeleteKpi(@item.Id, '@item.Name')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<partial name="_CatalogModals" />
+
+@section Scripts {
+    <script src="~/js/catalog-manager.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,297 @@
+@model KPI.Web.ViewModels.Payroll.CashSheetViewModel
+@{
+    var sheet = Model.Sheet;
+    ViewData["Title"] = $"Bảng Ký Nhận Tiền Mặt Mẫu 05a - {sheet.PeriodName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-body pb-5">
+    @Html.AntiForgeryToken()
+
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 no-print">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/Payroll/Index?periodId=@Model.SelectedPeriodId">Bảng Tính Lương</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Bảng Ký Nhận Mẫu 05a</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-pen-fill me-2 text-primary"></i>Bảng Thanh Toán Tiền Lương & Ký Nhận Tiền Mặt (Mẫu 05a)
+            </h1>
+            <p class="text-secondary small mb-0">
+                Danh sách chi trả thu nhập theo kết quả KPI, ký nhận tiền mặt tại quỹ Học viện Hành chính Quốc gia
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if (Model.CanDisburse)
+            {
+                <button type="button" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm" id="btnMarkAllSigned">
+                    <i class="bi bi-check2-all me-1"></i>Đánh Dấu Tất Cả Đã Nhận
+                </button>
+            }
+            <a href="/Payroll/ExportCashSheetCsv?periodId=@Model.SelectedPeriodId&departmentId=@Model.SelectedDepartmentId" 
+               class="btn btn-outline-success btn-sm rounded-pill px-3">
+                <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel (CSV)
+            </a>
+            <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>In Khổ A4 Ngang (Ctrl+P)
+            </button>
+            <a href="/Payroll/Index?periodId=@Model.SelectedPeriodId" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER BAR (Hidden when printing) -->
+    <div class="card-enterprise p-3 mb-4 no-print">
+        <form method="get" action="/Payroll/CashSheet" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Kỳ đánh giá:</label>
+                <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var p in Model.Periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == Model.SelectedPeriodId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-5">
+                <label class="form-label small text-secondary mb-1">Phòng ban:</label>
+                <select name="departmentId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Toàn cơ quan --</option>
+                    @foreach (var d in Model.Departments)
+                    {
+                        <option value="@d.Id" selected="@(d.Id == Model.SelectedDepartmentId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="/Payroll/CashSheet?periodId=@Model.SelectedPeriodId" class="btn btn-outline-secondary btn-sm rounded-pill w-100">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- PRINTABLE SHEET CONTAINER -->
+    <div class="card-enterprise p-4 print-sheet">
+        <!-- ADMINISTRATIVE HEADER -->
+        <div class="row align-items-start mb-4">
+            <div class="col-6">
+                <div class="small fw-semibold text-uppercase">HỌC VIỆN HÀNH CHÍNH QUỐC GIA</div>
+                <div class="small fw-bold text-primary">@sheet.DepartmentName.ToUpper()</div>
+                <div class="small text-muted font-mono" style="font-size: 11px;">Mã kỳ: @sheet.PeriodId &bull; Năm: @sheet.Year</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="small fw-bold">Mẫu số: 05a - LĐTL</div>
+                <div class="small text-muted fst-italic" style="font-size: 10px;">
+                    (Ban hành theo Thông tư số 133/2016/TT-BTC<br/>ngày 26/8/2016 của Bộ Tài chính)
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <h4 class="fw-bold text-dark text-uppercase mb-1">BẢNG THANH TOÁN TIỀN LƯƠNG VÀ KÝ NHẬN TIỀN MẶT</h4>
+            <div class="text-secondary small">Kỳ chi trả: <strong>@sheet.PeriodName</strong> &bull; Đơn vị: <strong>@sheet.DepartmentName</strong></div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle small mb-0">
+                <thead class="table-light text-secondary text-center text-uppercase" style="font-size: 11px;">
+                    <tr>
+                        <th style="width: 40px;">STT</th>
+                        <th style="width: 90px;">Mã CB</th>
+                        <th>Họ và tên</th>
+                        <th>Chức danh / Vị trí</th>
+                        <th>Phòng ban</th>
+                        <th class="text-end" style="width: 110px;">Lương CB (P1)</th>
+                        <th class="text-end" style="width: 110px;">Lương KPI (P3)</th>
+                        <th class="text-end" style="width: 100px;">Phụ cấp</th>
+                        <th class="text-end" style="width: 130px;">Số tiền thực lĩnh</th>
+                        <th class="text-center" style="width: 150px;">Ký nhận tiền mặt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (sheet.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                Chưa có danh sách cán bộ lập bảng lương cho kỳ này.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in sheet.Items)
+                        {
+                            <tr>
+                                <td class="text-center font-mono">@item.Index</td>
+                                <td class="text-center font-mono text-muted">@item.StaffCode</td>
+                                <td class="fw-bold text-dark">@item.FullName</td>
+                                <td class="text-secondary">@item.PositionName</td>
+                                <td class="text-secondary">@item.DepartmentName</td>
+                                <td class="text-end font-mono">@item.BaseSalary.ToString("N0")</td>
+                                <td class="text-end font-mono fw-semibold text-primary">@item.P3Salary.ToString("N0")</td>
+                                <td class="text-end font-mono">@item.Allowances.ToString("N0")</td>
+                                <td class="text-end font-mono fw-bold text-success fs-6">@item.NetSalary.ToString("N0")</td>
+                                <td class="text-center">
+                                    @if (item.IsPaid)
+                                    {
+                                        <div class="text-success small fw-semibold">
+                                            <i class="bi bi-check-circle-fill me-1"></i>@(string.IsNullOrWhiteSpace(item.RecipientSignature) ? "Đã nhận tiền mặt" : item.RecipientSignature)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        if (Model.CanDisburse)
+                                        {
+                                            <button type="button" class="btn btn-outline-success btn-sm py-0 px-2 btn-sign-one no-print" 
+                                                    data-id="@item.PayrollId" data-name="@item.FullName" style="font-size: 11px;">
+                                                Ký nhận
+                                            </button>
+                                        }
+                                        <span class="text-muted fst-italic" style="font-size: 11px;">(Chưa ký nhận)</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="8" class="text-end text-uppercase">Tổng Cộng Tiền Chi Trả Thực Lĩnh:</th>
+                        <th class="text-end font-mono fw-bold fs-5 text-success">@sheet.TotalAmount.ToString("N0") đ</th>
+                        <th class="text-center small font-mono">
+                            Đã ký: @sheet.TotalSignedCount / @sheet.TotalEmployees
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="mb-4 small">
+            - Số tiền viết bằng chữ: <strong class="fst-italic">@sheet.TotalAmountInWords</strong>
+        </div>
+
+        <!-- 4 SIGNATURE BLOCKS -->
+        <div class="row text-center mt-5 pt-3 page-break-avoid">
+            <div class="col-3">
+                <div class="fw-bold text-uppercase small">Người lập biểu</div>
+                <div class="fst-italic text-muted small mb-5">(Ký, họ tên)</div>
+                <div class="fw-bold small">Nguyễn Văn Lập</div>
+            </div>
+            <div class="col-3">
+                <div class="fw-bold text-uppercase small">Kế toán trưởng</div>
+                <div class="fst-italic text-muted small mb-5">(Ký, họ tên)</div>
+                <div class="fw-bold small">Trần Thị Kế Toán</div>
+            </div>
+            <div class="col-3">
+                <div class="fw-bold text-uppercase small">Thủ quỹ chi tiền</div>
+                <div class="fst-italic text-muted small mb-5">(Ký, họ tên)</div>
+                <div class="fw-bold small">Lê Thị Thủ Quỹ</div>
+            </div>
+            <div class="col-3">
+                <div class="fw-bold text-uppercase small">Thủ trưởng đơn vị</div>
+                <div class="fst-italic text-muted small mb-5">(Ký, họ tên, đóng dấu)</div>
+                <div class="fw-bold small">GIÁM ĐỐC HỌC VIỆN</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        body {
+            background: #fff !important;
+            font-size: 11pt !important;
+        }
+        .no-print, .app-header, .app-sidebar, .app-footer, .breadcrumb, .page-header {
+            display: none !important;
+        }
+        .app-container, .app-main, .content-body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .card-enterprise {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        @@page {
+            size: A4 landscape;
+            margin: 15mm 10mm 15mm 10mm;
+        }
+        .page-break-avoid {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        // Đánh dấu tất cả đã nhận
+        document.querySelector('#btnMarkAllSigned')?.addEventListener('click', async function() {
+            if (!confirm('Xác nhận: Bạn muốn đánh dấu tất cả cán bộ đã nhận đủ tiền mặt tại quỹ?')) return;
+
+            try {
+                const res = await fetch('/Payroll/PayAllCash', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ periodId: @Model.SelectedPeriodId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message || 'Đã cập nhật trạng thái nhận tiền thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            } catch (err) {
+                alert('Lỗi kết nối: ' + err.message);
+            }
+        });
+
+        // Ký nhận 1 người
+        document.querySelectorAll('.btn-sign-one').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const payrollId = this.dataset.id;
+                const name = this.dataset.name;
+                const sig = prompt(`Xác nhận ký nhận tiền mặt cho cán bộ: ${name}\nNhập ghi chú chữ ký:`, `Đã nhận tiền mặt bởi ${name}`);
+                if (!sig) return;
+
+                try {
+                    const res = await fetch('/Payroll/PayCash', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({ payrollId: parseInt(payrollId), signature: sig })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                } catch (err) {
+                    alert('Lỗi kết nối: ' + err.message);
+                }
+            });
+        });
+    });
+</script>

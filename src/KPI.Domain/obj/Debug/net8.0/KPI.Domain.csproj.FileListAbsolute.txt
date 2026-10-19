@@ -1,0 +1,11 @@
+d:\KPI\src\KPI.Domain\bin\Debug\net8.0\KPI.Domain.deps.json
+d:\KPI\src\KPI.Domain\bin\Debug\net8.0\KPI.Domain.dll
+d:\KPI\src\KPI.Domain\bin\Debug\net8.0\KPI.Domain.pdb
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.GeneratedMSBuildEditorConfig.editorconfig
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.AssemblyInfoInputs.cache
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.AssemblyInfo.cs
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.csproj.CoreCompileInputs.cache
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.dll
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\refint\KPI.Domain.dll
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\KPI.Domain.pdb
+d:\KPI\src\KPI.Domain\obj\Debug\net8.0\ref\KPI.Domain.dll

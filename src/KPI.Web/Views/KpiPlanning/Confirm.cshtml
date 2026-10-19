@@ -1,0 +1,208 @@
+@model KPI.Web.ViewModels.Planning.StaffConfirmViewModel
+@{
+    ViewData["Title"] = "Ký Cam Kết Chỉ Tiêu KPI Điện Tử";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var a = Model.Assignment;
+}
+
+<div class="content-body pb-5">
+    <!-- PAGE HEADER -->
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-dark mb-1">
+                    <li class="breadcrumb-item"><a href="/Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/KpiPlanning/MyKpi">KPI Của Tôi</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Xác nhận cam kết</li>
+                </ol>
+            </nav>
+            <h1 class="page-title text-gradient-primary mb-1">
+                <i class="bi bi-file-earmark-check me-2 text-primary"></i>Ký Cam Kết Chỉ Tiêu KPI Điện Tử
+            </h1>
+            <p class="text-secondary small mb-0">Xác thực văn bản mục tiêu công tác và cam kết thực hiện kế hoạch đánh giá</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/KpiPlanning/MyKpi" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại KPI Của Tôi
+            </a>
+        </div>
+    </div>
+
+    <!-- DOCUMENT CONTAINER (PAPER STYLE) -->
+    <div class="card-enterprise p-4 p-md-5 mb-4 shadow-lg border">
+        <!-- HEADER QUỐC GIA & TỔ CHỨC -->
+        <div class="row align-items-center border-bottom pb-4 mb-4 text-center text-md-start">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <h6 class="fw-bold text-uppercase mb-0 text-primary">HỌC VIỆN HÀNH CHÍNH VÀ QUẢN TRỊ CÔNG</h6>
+                <div class="text-secondary small">Đơn vị: <strong>@a.DepartmentName</strong></div>
+                <div class="text-muted small">Mã hồ sơ: <span class="font-mono">KPI-DOC-@a.Id-@a.PeriodYear</span></div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="fw-bold text-uppercase small">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                <div class="small fst-italic">Độc lập - Tự do - Hạnh phúc</div>
+                <div class="small text-muted mt-1">Hà Nội, ngày @DateTime.Now.ToString("dd") tháng @DateTime.Now.ToString("MM") năm @DateTime.Now.Year</div>
+            </div>
+        </div>
+
+        <!-- TIÊU ĐỀ BẢN CAM KẾT -->
+        <div class="text-center my-4">
+            <h3 class="fw-bold text-uppercase text-dark mb-1">BẢN CAM KẾT MỤC TIÊU HIỆU SUẤT CÔNG TÁC</h3>
+            <div class="text-primary fw-semibold fs-5">@a.PeriodName</div>
+            <div class="badge @a.StatusBadgeClass mt-2 px-3 py-1 font-mono fs-6">@a.StatusName</div>
+        </div>
+
+        <!-- THÔNG TIN CÁN BỘ & LÃNH ĐẠO -->
+        <div class="row g-3 p-3 rounded-3 bg-light-subtle border mb-4">
+            <div class="col-md-6">
+                <div><strong>Họ và tên cán bộ:</strong> @a.EmployeeName</div>
+                <div><strong>Mã công chức/viên chức:</strong> <span class="font-mono">@a.StaffCode</span></div>
+                <div><strong>Vị trí việc làm / Chức danh:</strong> @a.PositionName</div>
+            </div>
+            <div class="col-md-6">
+                <div><strong>Cán bộ lãnh đạo giao việc:</strong> @a.ApproverName</div>
+                <div><strong>Phòng ban / Đơn vị:</strong> @a.DepartmentName</div>
+                <div><strong>Thời điểm lập bản giao:</strong> @a.CreatedAtStr</div>
+            </div>
+        </div>
+
+        <!-- BẢNG DANH MỤC CHỈ TIÊU & TRỌNG SỐ -->
+        <h5 class="fw-bold mb-3 text-primary-emphasis">
+            <i class="bi bi-list-ol me-2 text-primary"></i>Danh Mục Chỉ Tiêu Được Giao
+        </h5>
+        <div class="table-responsive mb-4">
+            <table class="table-enterprise">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">STT</th>
+                        <th>Mã KPI</th>
+                        <th>Tên Chỉ Tiêu Công Việc</th>
+                        <th>Viễn Cảnh BSC</th>
+                        <th>Mục Tiêu (Target)</th>
+                        <th>Trọng Số (BR-02)</th>
+                        <th>Phương Pháp / Công Thức</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (item, index) in a.Details.Select((v, i) => (v, i + 1)))
+                    {
+                        <tr>
+                            <td>@index</td>
+                            <td><span class="badge bg-dark font-mono">@item.KpiCode</span></td>
+                            <td class="fw-bold">@item.KpiName</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">@item.Perspective</span></td>
+                            <td class="font-mono fw-bold text-primary">@item.TargetValue @item.Unit</td>
+                            <td class="font-mono fw-bold"><span class="badge bg-primary-subtle text-primary">@item.Weight%</span></td>
+                            <td>@item.ScoringFormulaName</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <td colspan="5" class="text-end fw-bold">Tổng trọng số toàn bộ bản giao (BR-01):</td>
+                        <td class="fw-bold font-mono text-success fs-6">@a.TotalWeight%</td>
+                        <td><span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i>Hợp lệ 100%</span></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- ĐIỀU KHOẢN CAM KẾT -->
+        <div class="alert alert-primary-subtle border-primary-subtle p-3 mb-4 small">
+            <h6 class="fw-bold text-primary mb-1"><i class="bi bi-shield-lock-fill me-1"></i>Quy định Cam kết Hiệu suất Công vụ</h6>
+            <ol class="mb-0 ps-3">
+                <li>Cán bộ cam kết nỗ lực thực hiện đầy đủ các mục tiêu công việc theo chỉ tiêu và tiến độ đã đề ra.</li>
+                <li>Sau khi được phê duyệt chính thức, bản giao sẽ được KHÓA toàn bộ theo quy định <strong>BR-03</strong>.</li>
+                <li>Trường hợp có biến động nhiệm vụ đột xuất giữa kỳ, cán bộ có quyền tạo văn bản Đề nghị điều chỉnh giữa kỳ theo quy trình.</li>
+            </ol>
+        </div>
+
+        <!-- KHU VỰC CHỮ KÝ ĐIỆN TỬ -->
+        <div class="row g-4 mt-2 pt-4 border-top">
+            <div class="col-md-6 text-center">
+                <div class="fw-bold text-uppercase small text-muted">LÃNH ĐẠO ĐƠN VỊ PHÊ DUYỆT</div>
+                <div class="fst-italic text-secondary small">(Ký và duyệt khi nhận cam kết)</div>
+                <div class="my-3 py-2">
+                    @if (a.ApprovedAt.HasValue)
+                    {
+                        <div class="badge bg-success font-mono p-2 fs-6">
+                            <i class="bi bi-check2-all me-1"></i>ĐÃ DUYỆT ĐIỆN TỬ: @a.ApprovedAtStr
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted small fst-italic">[Chờ nhân viên cam kết trước]</span>
+                    }
+                </div>
+                <div class="fw-bold text-dark">@a.ApproverName</div>
+            </div>
+
+            <div class="col-md-6 text-center">
+                <div class="fw-bold text-uppercase small text-muted">CÁN BỘ / NHÂN VIÊN CAM KẾT</div>
+                <div class="fst-italic text-secondary small">(Ký số xác nhận mục tiêu)</div>
+                <div class="my-3 py-2">
+                    @if (a.CommittedAt.HasValue)
+                    {
+                        <div class="badge bg-success font-mono p-2 fs-6">
+                            <i class="bi bi-patch-check-fill me-1"></i>ĐÃ KÝ CAM KẾT: @a.CommittedAtStr
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark font-mono p-2 fs-6">
+                            <i class="bi bi-hourglass-split me-1"></i>ĐANG CHỜ KÝ CAM KẾT
+                        </span>
+                    }
+                </div>
+                <div class="fw-bold text-dark">@a.EmployeeName</div>
+            </div>
+        </div>
+
+        <!-- ACTIONS PANEL -->
+        @if (Model.CanConfirm)
+        {
+            <div class="mt-5 p-4 rounded-3 bg-warning-subtle border border-warning-subtle text-center">
+                <h5 class="fw-bold text-dark mb-2">Bạn có đồng ý cam kết thực hiện các chỉ tiêu KPI nêu trên?</h5>
+                <p class="text-secondary small mb-4">
+                    Nhấn "Ký Cam Kết Điện Tử" để xác nhận mục tiêu và gửi hồ sơ lên Lãnh đạo phê duyệt. Nếu có điểm chưa phù hợp, bạn có thể gửi "Yêu Cầu Điều Chỉnh".
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-4" onclick="openAdjustmentModal()">
+                        <i class="bi bi-chat-left-text me-1"></i>Yêu Cầu Điều Chỉnh
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="confirmCommitment(@a.Id)">
+                        <i class="bi bi-pen-fill me-2"></i>Ký Cam Kết Điện Tử Ngay
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- MODAL YÊU CẦU ĐIỀU CHỈNH -->
+<div class="modal fade" id="modalAdjustmentRequest" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-circle me-2"></i>Yêu Cầu Điều Chỉnh Chỉ Tiêu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-secondary mb-3">Vui lòng nêu rõ lý do hoặc các chỉ tiêu cần xem xét lại mục tiêu / trọng số để Quản lý điều chỉnh:</p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Lý do điều chỉnh <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="adjustment-reason" rows="4" placeholder="Ví dụ: Chỉ tiêu tiến độ giải quyết hồ sơ 98% quá cao so với nguồn lực hiện tại, xin đề xuất giảm xuống 95%..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="submitAdjustmentRequest(@a.Id)">
+                    <i class="bi bi-send me-1"></i>Gửi Phản Hồi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/kpi-planning.js" asp-append-version="true"></script>
+}

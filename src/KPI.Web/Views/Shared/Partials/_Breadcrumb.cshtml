@@ -1,0 +1,36 @@
+@* 
+    _Breadcrumb.cshtml
+    Tham số ViewData:
+    - Items: Tuple<string, string>[] (Tên hiển thị, Đường dẫn URL)
+*@
+@{
+    var items = ViewData["BreadcrumbItems"] as IEnumerable<(string Title, string Url)>;
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0 py-1 small">
+        <li class="breadcrumb-item">
+            <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                <i class="bi bi-house-door me-1"></i>Trang chủ
+            </a>
+        </li>
+        @if (items != null)
+        {
+            var list = items.ToList();
+            for (int i = 0; i < list.Count; i++)
+            {
+                var isLast = i == list.Count - 1;
+                if (isLast)
+                {
+                    <li class="breadcrumb-item active fw-semibold" aria-current="page">@list[i].Title</li>
+                }
+                else
+                {
+                    <li class="breadcrumb-item">
+                        <a href="@list[i].Url" class="text-decoration-none">@list[i].Title</a>
+                    </li>
+                }
+            }
+        }
+    </ol>
+</nav>

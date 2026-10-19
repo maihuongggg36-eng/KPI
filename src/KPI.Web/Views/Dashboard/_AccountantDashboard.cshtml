@@ -1,0 +1,148 @@
+@model KPI.Application.DTOs.AccountantDashboardDto
+
+<!-- 1. Bộ 4 Thẻ Thống kê Kế toán Quỹ Tiền mặt -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tổng Quỹ Lương & KPI", 
+            ["Value"] = $"{Model.TotalPayrollFund:N0} đ", 
+            ["Subtitle"] = "Thủ tục 100% Tiền mặt tại quỹ", 
+            ["Icon"] = "bi-cash-stack", 
+            ["Color"] = "success",
+            ["Trend"] = "Kỳ Năm 2026",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Đã Chi Tiền Mặt", 
+            ["Value"] = $"{Model.PaidAmount:N0} đ", 
+            ["Subtitle"] = $"{Model.PaidCount} cán bộ đã ký nhận", 
+            ["Icon"] = "bi-check-circle-fill", 
+            ["Color"] = "primary",
+            ["Trend"] = "67.6% hoàn thành",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tồn Quỹ Chờ Phát", 
+            ["Value"] = $"{Model.PendingAmount:N0} đ", 
+            ["Subtitle"] = $"{Model.PendingCount} cán bộ chờ nhận tiền mặt", 
+            ["Icon"] = "bi-hourglass-split", 
+            ["Color"] = "warning",
+            ["Trend"] = "Cần phát tiền mặt",
+            ["TrendPositive"] = false
+        }' />
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <partial name="Partials/_StatCard" view-data='@new ViewDataDictionary(ViewData) { 
+            ["Title"] = "Tổng Số Phiếu Chi", 
+            ["Value"] = $"{Model.VoucherCount} phiếu", 
+            ["Subtitle"] = "Kèm phiếu thanh toán cá nhân", 
+            ["Icon"] = "bi-receipt-cutoff", 
+            ["Color"] = "info",
+            ["Trend"] = "Đủ chứng từ",
+            ["TrendPositive"] = true
+        }' />
+    </div>
+</div>
+
+<!-- 2. Biểu đồ Stacked Bar: Cơ cấu Chi Lương 5 Phòng ban (P1 + P2 + P3) -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-steps text-success fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Cơ cấu Chi trả Tiền mặt theo 5 Phòng ban (Stacked Bar Chart)</h6>
+                        <small class="text-secondary">P1: Lương ngạch bậc • P2: Phụ cấp trách nhiệm công vụ • P3: Lương hiệu quả KPI</small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-primary-subtle text-primary">P1 Ngạch bậc</span>
+                    <span class="badge bg-warning-subtle text-warning">P2 Phụ cấp</span>
+                    <span class="badge bg-success-subtle text-success">P3 Hiệu quả KPI</span>
+                </div>
+            </div>
+            <div class="p-3">
+                <div id="accountantSalaryChart" style="min-height: 340px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Danh sách Phiếu Chi Chờ Phát Tiền Mặt -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-cash-coin text-warning fs-5"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Danh sách Phiếu Chi Tiền mặt Cần Phát & Ký nhận</h6>
+                        <small class="text-secondary">Kế toán viên kiểm đếm tiền mặt, đối chiếu thẻ cán bộ và ký biên nhận</small>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportCashReceiptList()">
+                    <i class="bi bi-printer me-1"></i> In Bảng Ký Nhận Tiền Mặt
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table-enterprise">
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu Chi</th>
+                            <th>Họ và Tên Cán bộ</th>
+                            <th>Đơn vị công tác</th>
+                            <th>Điểm KPI</th>
+                            <th>Hệ số Thưởng (P3)</th>
+                            <th>Tổng Thực lĩnh Tiền mặt</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.PendingVouchers)
+                        {
+                            var isPaid = v.Status == "Đã chi tiền mặt";
+                            <tr id="voucher-row-@v.VoucherId">
+                                <td><span class="badge bg-dark font-mono">@v.VoucherCode</span></td>
+                                <td class="fw-bold">@v.EmployeeName</td>
+                                <td><span class="badge bg-secondary-subtle text-secondary">@v.DepartmentName</span></td>
+                                <td><span class="badge bg-primary-subtle text-primary font-mono fw-bold">@v.KpiScore.ToString("F1")</span></td>
+                                <td><span class="badge bg-info-subtle text-info font-mono fw-bold">x@v.BonusCoefficient.ToString("F2")</span></td>
+                                <td><span class="fw-bold text-success font-mono fs-6">@v.NetCashAmount.ToString("N0") đ</span></td>
+                                <td>
+                                    <span class="badge @(isPaid ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")" id="voucher-status-@v.VoucherId">
+                                        @v.Status
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    @if (!isPaid)
+                                    {
+                                        <button class="btn btn-sm btn-success rounded-pill px-3 btn-lift" 
+                                                id="voucher-btn-@v.VoucherId"
+                                                onclick="quickDisburse(@v.VoucherId, '@v.EmployeeName', '@v.NetCashAmount.ToString("N0") đ')">
+                                            <i class="bi bi-check2-circle me-1"></i> Chi tiền mặt
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>
+                                            <i class="bi bi-check-all me-1"></i> Đã hoàn tất
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
